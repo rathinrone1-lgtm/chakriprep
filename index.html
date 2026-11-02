@@ -116,6 +116,8 @@ h1.welcome{font-size:22px;line-height:1.35;margin:16px 0 2px}
 .btn-prev:disabled{opacity:.3}
 .btn-next{flex:1;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;background:var(--accent);color:#fff}
 .btn-submit{flex:1;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;background:var(--orange);color:#fff}
+.btn-save{flex:1;border:1.5px solid var(--accent);border-radius:12px;padding:12px 8px;font-size:14px;font-weight:700;background:var(--accent-soft);color:var(--accent)}
+.chip.draft{background:var(--amber-bg);color:var(--amber-tx)}
 /* modal */
 .modal{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;padding:16px}
 .modal.open{display:flex}
@@ -284,6 +286,7 @@ h1.welcome{font-size:22px;line-height:1.35;margin:16px 0 2px}
   <div class="wrap" style="padding-top:16px;padding-bottom:110px"><div id="qlist"></div></div>
   <div class="test-foot"><div class="inner">
     <button class="btn-prev" id="btn-prev">← আগের</button>
+    <button class="btn-save" id="btn-save">সংরক্ষণ করুন</button>
     <button class="btn-next" id="btn-next">পরের পেজ →</button>
     <button class="btn-submit" id="btn-submit" style="display:none">জমা দাও ✓</button>
   </div></div>
@@ -379,6 +382,18 @@ h1.welcome{font-size:22px;line-height:1.35;margin:16px 0 2px}
     <div class="row">
       <button class="btn-ghost" id="btn-cancel-submit" style="margin-top:0">ফিরে যাও</button>
       <button class="btn-orange" id="btn-confirm-submit" style="width:auto;flex:1">জমা দাও</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE / PAUSE MODAL -->
+<div class="modal" id="save-modal" role="dialog" aria-label="Exam saved">
+  <div class="box">
+    <h2>সংরক্ষণ করা হয়েছে ✓</h2>
+    <p id="save-modal-text">পরীক্ষাটি এই অবস্থাতেই সংরক্ষিত আছে।</p>
+    <div class="row">
+      <button class="btn-ghost" id="btn-save-stay" style="margin-top:0">পরীক্ষায় থাকো</button>
+      <button class="btn-accent" id="btn-save-exit" style="width:auto;flex:1">বের হয়ে যাও</button>
     </div>
   </div>
 </div>
@@ -840,9 +855,28 @@ function loadAttempts(){
   var a=state.attempts[0];
   if(a&&a.review){state.lastReview=a.review;state.lastTestId=a.testId}
   else{state.lastReview=null;state.lastTestId=null}
+  loadFavs();
 }
 function saveAttempts(){try{var k=userKey();if(!k)return;var all=lsRead();all[k]=state.attempts;localStorage.setItem(LS_KEY,JSON.stringify(all))}catch(e){}}
 function getAttempt(testId){for(var i=0;i<state.attempts.length;i++)if(state.attempts[i].testId===testId)return state.attempts[i];return null}
+/* SAVE & RESUME — an unfinished test can be paused with the "সংরক্ষণ করুন" button (or just
+   closed): the answers given so far, the current page and the remaining time are saved per
+   user on this device, and starting the test again resumes from exactly that state.
+   Given answers stay locked (green) and can never be changed, before and after resuming.
+   Submitting the test clears its saved draft and locks the test for good (see LOCK SYSTEM). */
+var LS_DRAFT_KEY="chakriprep_drafts_v1";
+var LS_FAVS_KEY="chakriprep_favs_v1";
+function draftsRead(){try{var raw=localStorage.getItem(LS_DRAFT_KEY);if(!raw)return{};var o=JSON.parse(raw);return (o&&typeof o==="object")?o:{}}catch(e){return{}}}
+function getDraft(testId){var k=userKey();if(!k)return null;var all=draftsRead();var mine=all[k];if(!mine)return null;var d=mine[testId];if(!d||!d.answers||d.answers.length!==getTest(testId).questions.length)return null;return d}
+function persistDraft(){
+  if(!state.testId||state.submitted)return;
+  try{var k=userKey();if(!k)return;var all=draftsRead();if(!all[k])all[k]={};
+  all[k][state.testId]={answers:state.answers.slice(),page:state.page,seconds:Math.max(0,state.seconds),when:new Date().toLocaleString("bn-BD")};
+  localStorage.setItem(LS_DRAFT_KEY,JSON.stringify(all))}catch(e){}
+}
+function clearDraft(testId){try{var k=userKey();if(!k)return;var all=draftsRead();if(all[k]&&all[k][testId]){delete all[k][testId];localStorage.setItem(LS_DRAFT_KEY,JSON.stringify(all))}}catch(e){}}
+function loadFavs(){try{var raw=localStorage.getItem(LS_FAVS_KEY);if(!raw)return;var o=JSON.parse(raw);var k=userKey();if(o&&k&&o[k]&&typeof o[k]==="object")state.favs=o[k]}catch(e){}}
+function saveFavs(){try{var k=userKey();if(!k)return;var raw=localStorage.getItem(LS_FAVS_KEY);var o={};if(raw){try{o=JSON.parse(raw)||{}}catch(e){o={}}}o[k]=state.favs;localStorage.setItem(LS_FAVS_KEY,JSON.stringify(o))}catch(e){}}
 function openAttemptReview(a){
   if(!a||!a.review)return;
   state.lastReview=a.review;state.lastTestId=a.testId;
@@ -908,12 +942,15 @@ document.querySelectorAll("[data-back]").forEach(function(b){b.addEventListener(
 function testCard(t,from){
     var total=t.questions.length;
     var done=getAttempt(t.id);
+    var draft=done?null:getDraft(t.id);
+    var draftAnswered=draft?draft.answers.filter(function(a){return a!==null}).length:0;
     var b=document.createElement("button");b.className="test-card";b.setAttribute("aria-label",t.post);
     b.innerHTML='<p class="post">'+esc(t.post)+(t.isNew?'<span class="new-badge">নতুন</span>':"")+'</p>'
       +'<p class="org">'+esc(t.org)+' • '+esc(t.postEn)+'</p>'
       +'<div class="chips"><span class="chip">'+total+'টি প্রশ্ন</span><span class="chip">'+t.minutes+' মিনিট</span><span class="chip">পূর্ণমান '+t.marks+'</span>'
       +(t.neg===0?'<span class="chip none">নেগেটিভ মার্কিং নেই</span>':'<span class="chip neg">ভুলে −০.৫</span>')
-      +(done?'<span class="chip lock">দেওয়া হয়ে গেছে — লক</span>':"")+'</div>'
+      +(done?'<span class="chip lock">দেওয়া হয়ে গেছে — লক</span>':"")
+      +(draft?'<span class="chip draft">সংরক্ষিত — '+draftAnswered+'টি উত্তর দেওয়া</span>':"")+'</div>'
       +(done?'<p style="color:var(--accent);font-size:14px;font-weight:600;margin:10px 0 0">তোমার স্কোর: '+done.score+'/'+done.total+'</p>':"")
       +'<p class="go">'+(done?"তোমার উত্তর ও রিভিউ দেখো →":"বিস্তারিত দেখো →")+'</p>';
     b.onclick=function(){openTestDetail(t.id,from)};
@@ -953,8 +990,15 @@ function openTestDetail(id,from){
     startBtn.textContent="তোমার উত্তর ও রিভিউ দেখো →";
     startBtn.onclick=function(){openAttemptReview(done)};
   } else {
-    last.style.display="none";last.textContent="";
-    startBtn.textContent="Start Now →";
+    var draft=getDraft(t.id);
+    if(draft){
+      var dAns=draft.answers.filter(function(a){return a!==null}).length;
+      last.style.display="";last.textContent="তুমি এই টেস্টের "+dAns+"টি উত্তর দিয়ে সংরক্ষণ করে রেখেছো ("+draft.when+")। আবার শুরু করলে ঠিক সেখান থেকেই — একই পেজ, বাকি সময় আর দেওয়া উত্তরগুলোসহ — চলতে থাকবে।";
+      startBtn.textContent="চালিয়ে যাও →";
+    } else {
+      last.style.display="none";last.textContent="";
+      startBtn.textContent="Start Now →";
+    }
     startBtn.onclick=function(){if(state.detailId)startTest(state.detailId)};
   }
   show("view-test-detail");
@@ -966,21 +1010,34 @@ $("btn-banner-start").onclick=function(){openTestDetail("sample")};
 /* test runner — PERMANENT RULE: never render a question-number palette/strip at the top of any test.
    Each card shows only the question, its options, and one centred favourite pill below;
    a chosen answer turns green and locks permanently. This applies to every test, present and future. */
-function startTest(id){
-  var doneA=getAttempt(id);
-  if(doneA&&doneA.review){openAttemptReview(doneA);return}
-  var t=getTest(id);state.testId=id;
-  state.answers=[];for(var i=0;i<t.questions.length;i++)state.answers.push(null);
-  state.page=0;state.seconds=t.minutes*60;state.submitted=false;
-  $("test-title").textContent=t.post;
-  renderTestPage();show("view-test");
+function startTimer(){
   if(state.timerId)clearInterval(state.timerId);
   state.timerId=setInterval(function(){
     state.seconds--;
     var tm=$("timer");tm.textContent=fmt(Math.max(0,state.seconds));tm.className="timer"+(state.seconds<=60?" low":"");
+    if(state.seconds%10===0)persistDraft();
     if(state.seconds<=0){clearInterval(state.timerId);submitTest();}
   },1000);
-  $("timer").textContent=fmt(state.seconds);$("timer").className="timer";
+  $("timer").textContent=fmt(Math.max(0,state.seconds));$("timer").className="timer"+(state.seconds<=60?" low":"");
+}
+function startTest(id){
+  var doneA=getAttempt(id);
+  if(doneA&&doneA.review){openAttemptReview(doneA);return}
+  var t=getTest(id);state.testId=id;
+  var draft=getDraft(id);
+  if(draft){
+    /* resume exactly where the test was left: same answers (still locked), same page, remaining time */
+    state.answers=draft.answers.slice();
+    state.page=Math.min(draft.page||0,Math.ceil(t.questions.length/PER_PAGE)-1);
+    state.seconds=draft.seconds>0?draft.seconds:t.minutes*60;
+  } else {
+    state.answers=[];for(var i=0;i<t.questions.length;i++)state.answers.push(null);
+    state.page=0;state.seconds=t.minutes*60;
+  }
+  state.submitted=false;
+  $("test-title").textContent=t.post;
+  renderTestPage();show("view-test");
+  startTimer();
 }
 function renderTestPage(){
   var qs=curQs(),TOTAL=qs.length,tid=state.testId;
@@ -999,8 +1056,8 @@ function renderTestPage(){
       }).join("");
       card.innerHTML='<p class="qtext"><span class="qn">'+no+'.</span>'+esc(q.text)+'</p><div class="opts">'+opts+'</div>'+
       '<div class="qactions"><button class="pillbtn'+(state.favs[fk]?" fav-on":"")+'" data-act="fav">'+(state.favs[fk]?"♥ ফেভারিট":"♡ ফেভারিট")+'</button></div>';
-      card.querySelectorAll(".opt").forEach(function(ob){ob.onclick=function(){if(state.answers[idx]!==null)return;var oi=parseInt(ob.getAttribute("data-oi"),10);state.answers[idx]=oi;renderTestPage();var el=document.getElementById("q-"+no);if(el)el.scrollIntoView({block:"start"})}});
-      card.querySelector('[data-act="fav"]').onclick=function(){state.favs[fk]=!state.favs[fk];renderTestPage();var el=document.getElementById("q-"+no);if(el)el.scrollIntoView({block:"start"})};
+      card.querySelectorAll(".opt").forEach(function(ob){ob.onclick=function(){if(state.answers[idx]!==null)return;var oi=parseInt(ob.getAttribute("data-oi"),10);state.answers[idx]=oi;persistDraft();renderTestPage();var el=document.getElementById("q-"+no);if(el)el.scrollIntoView({block:"start"})}});
+      card.querySelector('[data-act="fav"]').onclick=function(){state.favs[fk]=!state.favs[fk];saveFavs();persistDraft();renderTestPage();var el=document.getElementById("q-"+no);if(el)el.scrollIntoView({block:"start"})};
       list.appendChild(card);
     })(i);
   }
@@ -1009,8 +1066,41 @@ function renderTestPage(){
   $("btn-next").style.display=lastPage?"none":"";
   $("btn-submit").style.display=lastPage?"":"none";
 }
-$("btn-prev").onclick=function(){if(state.page>0){state.page--;renderTestPage();window.scrollTo(0,0)}};
-$("btn-next").onclick=function(){state.page++;renderTestPage();window.scrollTo(0,0)};
+/* PAGE TURN — one press of পরের পেজ / আগের must move exactly one page: after question 20
+   comes question 21 at the top of the screen, never a jump into the 40s. Safeguards:
+   (1) the page index is clamped to the real page range so it can never overshoot;
+   (2) a frame-based re-entry lock ignores a doubled dispatch of the same tap (a ghost
+   second click fired in the same frame), so one press can only ever advance one page —
+   the lock clears on the next painted frame, so a deliberate follow-up press is never
+   swallowed; (3) the new page is shown from its very top with an instant jump — the
+   global smooth-scroll CSS (html{scroll-behavior:smooth}) otherwise animates slowly up
+   from the bottom of the old page and leaves the LAST question of the new page (e.g.
+   Q40) on screen first, which reads as "20-র পরে 40 চলে এলো". */
+var pageTurnBusy=false;
+function turnPage(dir){
+  if(pageTurnBusy)return;pageTurnBusy=true;
+  requestAnimationFrame(function(){requestAnimationFrame(function(){pageTurnBusy=false})});
+  var maxPage=Math.ceil(totalQ()/PER_PAGE)-1;
+  var np=Math.min(Math.max(state.page+dir,0),maxPage);
+  if(np===state.page)return;
+  state.page=np;persistDraft();renderTestPage();
+  try{window.scrollTo({top:0,left:0,behavior:"instant"})}catch(e){window.scrollTo(0,0)}
+}
+$("btn-prev").onclick=function(){turnPage(-1)};
+$("btn-next").onclick=function(){turnPage(1)};
+/* SAVE & RESUME button — sits between আগের and পরের পেজ in the test footer. It freezes the
+   test exactly as it stands (answers locked so far, current page, remaining time) and the
+   next start of this test resumes from that state. Nothing is submitted or scored. */
+$("btn-save").onclick=function(){
+  persistDraft();
+  if(state.timerId)clearInterval(state.timerId);
+  var TOTAL=totalQ();
+  var answered=state.answers.filter(function(a){return a!==null}).length;
+  $("save-modal-text").textContent="এ পর্যন্ত "+answered+"/"+TOTAL+"টি উত্তর দিয়েছো। পরীক্ষাটি ঠিক এই অবস্থাতেই সংরক্ষিত থাকবে — পরে এই টেস্ট আবার শুরু করলেই একই পেজ, বাকি সময় আর দেওয়া উত্তরগুলোসহ সেখান থেকেই চলতে থাকবে। দেওয়া উত্তরগুলো লক করা আছে, বদলানো যাবে না।";
+  $("save-modal").classList.add("open");
+};
+$("btn-save-stay").onclick=function(){$("save-modal").classList.remove("open");startTimer()};
+$("btn-save-exit").onclick=function(){$("save-modal").classList.remove("open");var id=state.testId;state.testId=null;openTestDetail(id,state.detailFrom)};
 $("btn-submit").onclick=function(){
   var TOTAL=totalQ(),t=curTest();
   var answered=state.answers.filter(function(a){return a!==null}).length;
@@ -1023,6 +1113,7 @@ $("btn-confirm-submit").onclick=function(){$("submit-modal").classList.remove("o
 function submitTest(){
   if(state.submitted)return;state.submitted=true;
   if(state.timerId)clearInterval(state.timerId);
+  clearDraft(state.testId);
   var t=curTest(),qs=curQs(),TOTAL=qs.length;
   var correct=0,wrong=0,skipped=0,review=[];
   qs.forEach(function(q,i){
@@ -1050,7 +1141,7 @@ function reviewCard(r,hideBadge){
   }).join("");
   return '<div class="rcard"><div class="top"><p class="qtext"><span class="qn">'+r.no+'.</span>'+esc(r.text)+'</p>'+(hideBadge?"":'<span class="st '+r.status+'">'+badge+'</span>')+'</div><div style="margin-top:6px">'+opts+'</div><p class="expl">'+esc(r.explanation)+'</p><div style="margin-top:12px"><button class="pillbtn'+(state.favs[fk]?" fav-on":"")+'" onclick="toggleFavReview(\''+r.testId+'\','+r.no+')">'+(state.favs[fk]?"♥ ফেভারিট":"♡ ফেভারিট")+'</button></div></div>';
 }
-window.toggleFavReview=function(testId,no){var fk=fkey(testId,no);state.favs[fk]=!state.favs[fk];if($("view-result").classList.contains("active"))renderReview();if($("view-wrong").classList.contains("active"))renderWrong();if($("view-favourites").classList.contains("active"))renderFlagged("fav");renderGrid()};
+window.toggleFavReview=function(testId,no){var fk=fkey(testId,no);state.favs[fk]=!state.favs[fk];saveFavs();if($("view-result").classList.contains("active"))renderReview();if($("view-wrong").classList.contains("active"))renderWrong();if($("view-favourites").classList.contains("active"))renderFlagged("fav");renderGrid()};
 function renderReview(){
   var items=state.reviewFilter==="wrong"?wrongItems():state.lastReview;
   if(!items){$("review-list").innerHTML="";return}
