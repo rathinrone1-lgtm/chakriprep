@@ -848,9 +848,22 @@ function showView(id){var vs=document.querySelectorAll(".view");for(var i=0;i<vs
    At Home (the root screen) no history entry is left below, so the system/wrapper handles
    the press itself (its "press back again to exit" prompt), exactly as the user asked.
    Mid-test, a back press opens the big save-or-leave popup instead of navigating (see
-   BACK-BUTTON EXIT POPUP below). All history calls are try/caught: if the host forbids
-   them, the in-app buttons keep working exactly as before. */
-var navStack=[],navSuppress=false,histArmed=false;
+   BACK-BUTTON EXIT POPUP below). Entering a test — fresh start or চালিয়ে যাও resume,
+   both go through startTest — additionally pushes a dedicated guard entry (see
+   armTestGuard), so a mid-test back press always has an entry to consume and always
+   reaches that popup instead of quitting the app. All history calls are try/caught:
+   if the host forbids them, the in-app buttons keep working exactly as before. */
+var navStack=[],histArmed=false,testGuard=false,suppressPops=[];
+/* When the app itself steps back in history (history.go after an on-screen back
+   button), the browser fires exactly one popstate for that move, which is NOT a
+   fresh back press. Each such move queues one token here and the popstate handler
+   consumes a token instead of stepping back a second time. A token expires after
+   2s unused, so a move that never fires popstate can never swallow a later real
+   back press. (The old code used one boolean cleared by a 350ms timeout: on a slow
+   phone the popstate from history.go could arrive after the timeout, be mistaken
+   for a fresh back press, and pop a second screen — stack and history drifted
+   apart until a mid-test back press found no entry left and quit the app.) */
+function suppressNextPop(){var t=Date.now()+"-"+Math.random();suppressPops.push(t);setTimeout(function(){var i=suppressPops.indexOf(t);if(i>=0)suppressPops.splice(i,1)},2000)}
 function show(id){
   var top=navStack[navStack.length-1];
   if(top===id){showView(id);return}
@@ -859,15 +872,31 @@ function show(id){
     var pops=navStack.length-1-idx;
     navStack.length=idx+1;
     showView(id);
-    if(pops>0&&histArmed){navSuppress=true;setTimeout(function(){navSuppress=false},350);try{history.go(-pops)}catch(e){}}
+    /* leaving the test also steps over its guard entry (see armTestGuard), so
+       history lands exactly on the target screen's own entry, never one short */
+    if(top==="view-test"&&testGuard){pops+=1;testGuard=false}
+    if(pops>0&&histArmed){suppressNextPop();try{history.go(-pops)}catch(e){}}
   }else{
     var first=navStack.length===0;
     navStack.push(id);
     showView(id);
+    if(top==="view-test")testGuard=false;
     if(!first){try{history.pushState({v:id},"");histArmed=true}catch(e){}}
   }
 }
 function rearmHistory(){try{history.pushState({v:navStack[navStack.length-1]||"view-home"},"");histArmed=true}catch(e){}}
+/* TEST GUARD ENTRY — startTest calls this on EVERY entry into a test (fresh start
+   and চালিয়ে যাও resume alike): one extra history entry pushed on top of the test
+   screen's own entry. A back press during the test therefore always has an entry
+   to consume and always reaches the popstate handler — which opens the big
+   save-or-leave popup and re-arms the guard — instead of leaving the app, no
+   matter which path the test was entered by. The ways out of a test (popup
+   buttons, save-exit, submit) step back over the guard again, so the screens
+   below the test keep exactly their own entries. */
+function armTestGuard(){
+  testGuard=false;
+  try{history.pushState({v:"view-test",guard:1},"");histArmed=true;testGuard=true}catch(e){}
+}
 function refreshView(id){
   if(id==="view-home")renderGrid();
   else if(id==="view-tests")renderTestsList();
@@ -892,7 +921,7 @@ function stepBack(){
   return false;
 }
 window.addEventListener("popstate",function(){
-  if(navSuppress){navSuppress=false;return}
+  if(suppressPops.length){suppressPops.shift();return}
   /* The browser already consumed one history entry for this press. If the step was
      handled without changing screens (a popup opened or closed), re-arm one entry so
      the next back press is also delivered to the app instead of quitting it; if the
@@ -1113,6 +1142,10 @@ function startTest(id){
   state.submitted=false;
   $("test-title").textContent=t.post;
   renderTestPage();show("view-test");
+  /* every entry path into the test (fresh start and চালিয়ে যাও resume both land
+     here) arms the guard entry, so the back button can never quit the app from
+     inside a test — it opens the save-or-leave popup instead */
+  armTestGuard();
   startTimer();
 }
 function renderTestPage(){
@@ -1180,12 +1213,17 @@ $("btn-save-exit").onclick=function(){$("save-modal").classList.remove("open");v
 /* BACK-BUTTON EXIT POPUP (during a test) — pressing the phone/browser back button mid-test
    never leaves the app: this big popup pauses the timer and offers "সংরক্ষণ করুন" (save the
    test exactly as it stands, then go to the previous screen) or "সংরক্ষণ ছাড়াই বের হয়ে যান"
-   (go to the previous screen without saving). Either choice lands on the test's detail
+   (go to the previous screen; the answers given so far stay auto-saved either way, so
+   leaving via back never loses them). Either choice lands on the test's detail
    page — the screen the test was started from — never outside the app. Answers already
    given stay locked either way, as everywhere in the app. "পরীক্ষায় থাকো" (or another
    back press) closes the popup and the test continues with its remaining time. */
 function openBackExit(){
   if(state.timerId)clearInterval(state.timerId);
+  /* freeze the draft the moment back is pressed, so the answers given so far are
+     already saved whatever the user chooses next — or even if the app is closed
+     while this popup is open */
+  persistDraft();
   var TOTAL=totalQ();
   var answered=state.answers.filter(function(a){return a!==null}).length;
   $("backexit-text").textContent="এ পর্যন্ত "+answered+"/"+TOTAL+"টি উত্তর দিয়েছো। সংরক্ষণ করে বের হলে পরীক্ষাটি ঠিক এই অবস্থাতেই থাকবে — পরে আবার শুরু করলে একই পেজ, বাকি সময় আর দেওয়া উত্তরগুলোসহ সেখান থেকেই চলবে। দেওয়া উত্তরগুলো লক করা আছে, বদলানো যাবে না।";
@@ -1195,13 +1233,23 @@ function closeBackExit(){$("backexit-modal").classList.remove("open");if($("view
 function leaveTestFromBack(save){
   $("backexit-modal").classList.remove("open");
   if(state.timerId)clearInterval(state.timerId);
-  if(save)persistDraft();
+  /* the draft is frozen on BOTH choices: answers already given are auto-saved as
+     they are tapped and must never be lost just because the user left via the
+     back button — "সংরক্ষণ ছাড়াই" only skips the extra confirmation, the given
+     answers (still locked) stay saved and the test can be resumed later */
+  persistDraft();
   var id=state.testId;state.testId=null;
   openTestDetail(id,state.detailFrom);
 }
 $("btn-backexit-save").onclick=function(){leaveTestFromBack(true)};
 $("btn-backexit-nosave").onclick=function(){leaveTestFromBack(false)};
 $("btn-backexit-stay").onclick=function(){closeBackExit()};
+/* LAST-RESORT DRAFT FREEZE — if the app is closed, backgrounded or the tab is
+   discarded mid-test by any route at all, the answers given so far (with the
+   current page and remaining time) are already frozen into the draft, so
+   reopening the test offers চালিয়ে যাও with nothing lost. */
+window.addEventListener("pagehide",function(){if(state.testId&&!state.submitted)persistDraft()});
+document.addEventListener("visibilitychange",function(){if(document.hidden&&state.testId&&!state.submitted)persistDraft()});
 $("btn-submit").onclick=function(){
   var TOTAL=totalQ(),t=curTest();
   var answered=state.answers.filter(function(a){return a!==null}).length;
@@ -1216,7 +1264,11 @@ function submitTest(){
   if(state.timerId)clearInterval(state.timerId);
   /* the result screen replaces the test screen in the back stack: going back from a
      result lands on the test detail / list it came from, never on a dead test screen */
-  if(navStack[navStack.length-1]==="view-test"){navStack[navStack.length-1]="view-result";try{history.replaceState({v:"view-result"},"")}catch(e){}}
+  if(navStack[navStack.length-1]==="view-test"){navStack[navStack.length-1]="view-result";
+    /* step back over the test's guard entry so the result screen sits on the test
+       screen's own entry, with the detail entry directly below it */
+    if(testGuard){testGuard=false;suppressNextPop();try{history.go(-1)}catch(e){}}
+    else{try{history.replaceState({v:"view-result"},"")}catch(e){}}}
   $("backexit-modal").classList.remove("open");$("submit-modal").classList.remove("open");$("save-modal").classList.remove("open");
   clearDraft(state.testId);
   var t=curTest(),qs=curQs(),TOTAL=qs.length;
