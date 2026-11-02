@@ -126,6 +126,8 @@ h1.welcome{font-size:22px;line-height:1.35;margin:16px 0 2px}
 .modal h2{margin:0;font-size:18px}.modal p{color:var(--dim);font-size:14px;line-height:1.6}
 .modal .row{display:flex;gap:10px;margin-top:16px}
 .modal .row button{flex:1}
+.modal.big .box{max-width:420px;padding:24px}
+.modal.big h2{font-size:20px}
 /* result */
 .score-hero{background:var(--accent-deep);color:#fff;border-radius:18px;padding:24px;text-align:center;margin-top:12px}
 .score-hero .k{font-size:13px;opacity:.8;margin:0}
@@ -394,6 +396,19 @@ h1.welcome{font-size:22px;line-height:1.35;margin:16px 0 2px}
     <div class="row">
       <button class="btn-ghost" id="btn-save-stay" style="margin-top:0">পরীক্ষায় থাকো</button>
       <button class="btn-accent" id="btn-save-exit" style="width:auto;flex:1">বের হয়ে যাও</button>
+    </div>
+  </div>
+</div>
+
+<!-- BACK-BUTTON EXIT POPUP (during a test) -->
+<div class="modal big" id="backexit-modal" role="dialog" aria-label="Exit exam">
+  <div class="box">
+    <h2>পরীক্ষা ছেড়ে যেতে চাও?</h2>
+    <p id="backexit-text">পরীক্ষাটি এই অবস্থাতেই সংরক্ষিত থাকবে।</p>
+    <div style="display:grid;gap:10px;margin-top:18px">
+      <button class="btn-accent" id="btn-backexit-save" style="width:100%;padding:14px;font-size:15px">সংরক্ষণ করুন</button>
+      <button class="btn-ghost" id="btn-backexit-nosave" style="margin-top:0;width:100%;padding:13px;font-size:15px">সংরক্ষণ ছাড়াই বের হয়ে যান</button>
+      <button class="btn-ghost" id="btn-backexit-stay" style="margin-top:0;width:100%;border:none;color:var(--accent);padding:10px;font-size:15px">পরীক্ষায় থাকো</button>
     </div>
   </div>
 </div>
@@ -824,7 +839,68 @@ var LETTERS=["ক","খ","গ","ঘ","ঙ"], PER_PAGE=20;
 var state={name:"",phone:"",testId:null,answers:[],page:0,seconds:0,timerId:null,attempts:[],lastReview:null,lastTestId:null,favs:{},marked:{},reviewFilter:"all",submitted:false,detailId:null,detailFrom:"tests"};
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
-function show(id){var vs=document.querySelectorAll(".view");for(var i=0;i<vs.length;i++)vs[i].classList.remove("active");$(id).classList.add("active");window.scrollTo(0,0)}
+function showView(id){var vs=document.querySelectorAll(".view");for(var i=0;i<vs.length;i++)vs[i].classList.remove("active");$(id).classList.add("active");window.scrollTo(0,0)}
+/* IN-APP BACK NAVIGATION — the app mirrors its screens in navStack and in browser history
+   (one history entry per screen), so the phone/browser back button walks back through the
+   app's own screens one step at a time — … → list → test detail → home — instead of quitting
+   the app outright. show() is the single navigation entry point and keeps the two in sync:
+   navigating to a screen already in the stack pops back to it; a new screen is pushed.
+   At Home (the root screen) no history entry is left below, so the system/wrapper handles
+   the press itself (its "press back again to exit" prompt), exactly as the user asked.
+   Mid-test, a back press opens the big save-or-leave popup instead of navigating (see
+   BACK-BUTTON EXIT POPUP below). All history calls are try/caught: if the host forbids
+   them, the in-app buttons keep working exactly as before. */
+var navStack=[],navSuppress=false,histArmed=false;
+function show(id){
+  var top=navStack[navStack.length-1];
+  if(top===id){showView(id);return}
+  var idx=navStack.lastIndexOf(id);
+  if(idx>=0){
+    var pops=navStack.length-1-idx;
+    navStack.length=idx+1;
+    showView(id);
+    if(pops>0&&histArmed){navSuppress=true;setTimeout(function(){navSuppress=false},350);try{history.go(-pops)}catch(e){}}
+  }else{
+    var first=navStack.length===0;
+    navStack.push(id);
+    showView(id);
+    if(!first){try{history.pushState({v:id},"");histArmed=true}catch(e){}}
+  }
+}
+function rearmHistory(){try{history.pushState({v:navStack[navStack.length-1]||"view-home"},"");histArmed=true}catch(e){}}
+function refreshView(id){
+  if(id==="view-home")renderGrid();
+  else if(id==="view-tests")renderTestsList();
+  else if(id==="view-coaching")renderCoachingList();
+  else if(id==="view-results")renderResults();
+  else if(id==="view-wrong")renderWrong();
+  else if(id==="view-favourites")renderFlagged("fav");
+  else if(id==="view-profile")renderProfile();
+  else if(id==="view-test-detail"&&state.detailId)openTestDetail(state.detailId,state.detailFrom);
+  else if(id==="view-result")renderReview();
+}
+/* One step back inside the app; returns true when the step was handled in-app.
+   An open popup is closed first; during a test the save-or-leave popup opens instead
+   of navigating; otherwise the stack pops one screen and that screen is refreshed. */
+function stepBack(){
+  if($("backexit-modal").classList.contains("open")){closeBackExit();return true}
+  if($("submit-modal").classList.contains("open")){$("submit-modal").classList.remove("open");return true}
+  if($("save-modal").classList.contains("open")){$("save-modal").classList.remove("open");if($("view-test").classList.contains("active"))startTimer();return true}
+  var cur=navStack[navStack.length-1];
+  if(cur==="view-test"){openBackExit();return true}
+  if(navStack.length>1){navStack.pop();var target=navStack[navStack.length-1];refreshView(target);showView(target);return true}
+  return false;
+}
+window.addEventListener("popstate",function(){
+  if(navSuppress){navSuppress=false;return}
+  /* The browser already consumed one history entry for this press. If the step was
+     handled without changing screens (a popup opened or closed), re-arm one entry so
+     the next back press is also delivered to the app instead of quitting it; if the
+     stack popped, the consumed entry was that screen's own, so nothing is re-armed. */
+  var before=navStack.length;
+  var handled=stepBack();
+  if(handled&&navStack.length===before)rearmHistory();
+});
 function fmt(s){var m=Math.floor(s/60),r=s%60;return (m<10?"0":"")+m+":"+(r<10?"0":"")+r}
 function getTest(id){for(var i=0;i<TESTS.length;i++)if(TESTS[i].id===id)return TESTS[i];return TESTS[0]}
 function curTest(){return getTest(state.testId)}
@@ -934,7 +1010,7 @@ function renderProfile(){$("prof-name").textContent=state.name;$("prof-phone").t
 function validateLogin(){var n=$("inp-name").value.trim();var p=$("inp-phone").value.replace(/\D/g,"");$("btn-login").disabled=!(n&&p.length>=11)}
 $("inp-name").addEventListener("input",validateLogin);
 $("inp-phone").addEventListener("input",validateLogin);
-$("login-form").addEventListener("submit",function(e){e.preventDefault();var n=$("inp-name").value.trim();var p=$("inp-phone").value.trim();if(!n||p.replace(/\D/g,"").length<11)return;state.name=n;state.phone=p;saveSession();loadAttempts();$("welcome-text").textContent="Welcome back, "+n+"!";renderGrid();show("view-home")});
+$("login-form").addEventListener("submit",function(e){e.preventDefault();var n=$("inp-name").value.trim();var p=$("inp-phone").value.trim();if(!n||p.replace(/\D/g,"").length<11)return;state.name=n;state.phone=p;saveSession();loadAttempts();$("welcome-text").textContent="Welcome back, "+n+"!";renderGrid();if(navStack.length)navStack[navStack.length-1]="view-home";try{history.replaceState({v:"view-home"},"")}catch(e){} show("view-home")});
 $("profile-form").addEventListener("submit",function(e){e.preventDefault();state.name=$("pname").value.trim()||state.name;state.phone=$("pphone").value.trim();saveSession();loadAttempts();$("welcome-text").textContent="Welcome back, "+state.name+"!";renderProfile();renderGrid()});
 document.querySelectorAll("[data-back]").forEach(function(b){b.addEventListener("click",function(){renderGrid();show("view-home")})});
 
@@ -1101,6 +1177,31 @@ $("btn-save").onclick=function(){
 };
 $("btn-save-stay").onclick=function(){$("save-modal").classList.remove("open");startTimer()};
 $("btn-save-exit").onclick=function(){$("save-modal").classList.remove("open");var id=state.testId;state.testId=null;openTestDetail(id,state.detailFrom)};
+/* BACK-BUTTON EXIT POPUP (during a test) — pressing the phone/browser back button mid-test
+   never leaves the app: this big popup pauses the timer and offers "সংরক্ষণ করুন" (save the
+   test exactly as it stands, then go to the previous screen) or "সংরক্ষণ ছাড়াই বের হয়ে যান"
+   (go to the previous screen without saving). Either choice lands on the test's detail
+   page — the screen the test was started from — never outside the app. Answers already
+   given stay locked either way, as everywhere in the app. "পরীক্ষায় থাকো" (or another
+   back press) closes the popup and the test continues with its remaining time. */
+function openBackExit(){
+  if(state.timerId)clearInterval(state.timerId);
+  var TOTAL=totalQ();
+  var answered=state.answers.filter(function(a){return a!==null}).length;
+  $("backexit-text").textContent="এ পর্যন্ত "+answered+"/"+TOTAL+"টি উত্তর দিয়েছো। সংরক্ষণ করে বের হলে পরীক্ষাটি ঠিক এই অবস্থাতেই থাকবে — পরে আবার শুরু করলে একই পেজ, বাকি সময় আর দেওয়া উত্তরগুলোসহ সেখান থেকেই চলবে। দেওয়া উত্তরগুলো লক করা আছে, বদলানো যাবে না।";
+  $("backexit-modal").classList.add("open");
+}
+function closeBackExit(){$("backexit-modal").classList.remove("open");if($("view-test").classList.contains("active")&&!state.submitted)startTimer()}
+function leaveTestFromBack(save){
+  $("backexit-modal").classList.remove("open");
+  if(state.timerId)clearInterval(state.timerId);
+  if(save)persistDraft();
+  var id=state.testId;state.testId=null;
+  openTestDetail(id,state.detailFrom);
+}
+$("btn-backexit-save").onclick=function(){leaveTestFromBack(true)};
+$("btn-backexit-nosave").onclick=function(){leaveTestFromBack(false)};
+$("btn-backexit-stay").onclick=function(){closeBackExit()};
 $("btn-submit").onclick=function(){
   var TOTAL=totalQ(),t=curTest();
   var answered=state.answers.filter(function(a){return a!==null}).length;
@@ -1113,6 +1214,10 @@ $("btn-confirm-submit").onclick=function(){$("submit-modal").classList.remove("o
 function submitTest(){
   if(state.submitted)return;state.submitted=true;
   if(state.timerId)clearInterval(state.timerId);
+  /* the result screen replaces the test screen in the back stack: going back from a
+     result lands on the test detail / list it came from, never on a dead test screen */
+  if(navStack[navStack.length-1]==="view-test"){navStack[navStack.length-1]="view-result";try{history.replaceState({v:"view-result"},"")}catch(e){}}
+  $("backexit-modal").classList.remove("open");$("submit-modal").classList.remove("open");$("save-modal").classList.remove("open");
   clearDraft(state.testId);
   var t=curTest(),qs=curQs(),TOTAL=qs.length;
   var correct=0,wrong=0,skipped=0,review=[];
