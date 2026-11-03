@@ -101,6 +101,8 @@ h1.welcome{font-size:22px;line-height:1.35;margin:16px 0 2px}
 .opt .L{width:27px;height:27px;flex-shrink:0;border-radius:50%;background:var(--surface-alt);color:var(--dim);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .opt.sel{border-color:var(--sel-border);background:var(--sel-bg);color:var(--sel-tx);font-weight:700}
 .opt.sel .L{background:var(--sel-solid);color:#fff}
+.opt.wrong{border-color:#DC2626;background:var(--red-bg);color:var(--red-tx);font-weight:700}
+.opt.wrong .L{background:#DC2626;color:#fff}
 .opt.locked{cursor:default}
 .opt.locked:not(.sel){opacity:.62}
 .opt:disabled{opacity:1}
@@ -175,6 +177,17 @@ h1.welcome{font-size:22px;line-height:1.35;margin:16px 0 2px}
 .exam-on .dot{width:10px;height:10px;border-radius:50%;background:var(--sel-solid);box-shadow:0 0 0 4px var(--green-bg);flex-shrink:0}
 .exam-on h2{font-size:17px;margin:0;letter-spacing:.02em}
 .exam-on .on-sub{font-size:12.5px;font-weight:700;color:var(--green-tx);background:var(--green-bg);border-radius:999px;padding:4px 10px}
+/* question bank */
+.qb-subjects{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.qb-subjects button{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:600}
+.qb-subjects button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.qb-subj{flex-shrink:0;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.qb-note{margin-top:10px;background:var(--amber-bg);color:var(--amber-tx);border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.65}
+.chip.partial{background:var(--amber-bg);color:var(--amber-tx);font-weight:700}
+.partial-badge{display:inline-block;background:var(--amber-bg);color:var(--amber-tx);border:1px solid var(--amber-tx);font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;vertical-align:2px;margin-left:6px}
+.qb-partial-banner{margin-top:14px;background:var(--amber-bg);color:var(--amber-tx);border:1.5px solid var(--amber-tx);border-radius:12px;padding:14px 16px;font-size:15.5px;line-height:1.7}
+.qb-partial-banner b{font-size:16px}
+.qb-bank-notice{margin-top:12px;background:var(--amber-bg);color:var(--amber-tx);border-radius:12px;padding:12px 14px;font-size:14.5px;line-height:1.7}
 </style>
 </head>
 <body>
@@ -240,6 +253,30 @@ h1.welcome{font-size:22px;line-height:1.35;margin:16px 0 2px}
     <p class="sub" style="margin-top:12px">কোচিংয়ের পরীক্ষাগুলো এখানে পর্যায়ক্রমে Exam -1, Exam -2, Exam -3… হিসেবে সাজানো থাকে। নিচে Exam On অংশে চলমান পরীক্ষাটি দেওয়া আছে — কার্ডে চাপ দিলে বিবরণ দেখবে, তারপর Start Now বাটনে চাপ দিলে পরীক্ষা শুরু হবে।</p>
     <div class="exam-on"><span class="dot" aria-hidden="true"></span><h2>Exam On</h2><span class="on-sub">চলমান পরীক্ষা</span></div>
     <div class="stack" id="coaching-list" style="margin-top:12px"></div>
+  </div>
+</section>
+
+<!-- QUESTION BANK -->
+<section class="view" id="view-qbank">
+  <div class="wrap">
+    <div class="shell-head"><button class="btn-back" data-back aria-label="Back">←</button><h1>Question Bank</h1></div>
+    <p class="sub" style="margin-top:12px">বিগত সালের আসল প্রশ্ন দিয়ে পড়া আর নিজে যাচাই — এখানে কোনো টাইমার, নেগেটিভ মার্কিং বা লক নেই। প্রশ্নের উত্তর আগে থেকে দেখা যাবে না; নিজে টিক দিলেই সঠিক-ভুল জানা যাবে, আর প্রতিটি প্রশ্নের বিস্তারিত ব্যাখ্যাও আছে। সব উত্তর Satt Academy প্রশ্নব্যাংকের ছাপা উত্তর অনুযায়ী দেওয়া হয়েছে।</p>
+    <div class="qb-bank-notice"><b>মনোযোগ:</b> প্রতি BCS প্রিলিমিনারিতে প্রায় ১০০টি প্রশ্ন থাকে। কোনো সালের সম্পূর্ণ ১০০টি প্রশ্ন Satt Academy থেকে যাচাই করা না গেলে সেই সালকে এখানে <b>“আংশিক”</b> বলে স্পষ্টভাবে চিহ্নিত করা হয়েছে — আংশিক সেটকে সম্পূর্ণ সাল ভেবে নেওয়া যাবে না। বানানো প্রশ্ন দিয়ে কোনো সাল পূরণ করা হয়নি।</div>
+    <div class="exam-on"><span class="dot" aria-hidden="true"></span><h2>BCS</h2><span class="on-sub">সাল অনুযায়ী সাজানো</span></div>
+    <div class="stack" id="qbank-years" style="margin-top:12px"></div>
+    <div class="exam-on"><span class="dot" aria-hidden="true" style="background:var(--dim);box-shadow:0 0 0 4px var(--surface-alt)"></span><h2>Primary • NTRCA</h2><span class="on-sub" style="background:var(--surface-alt);color:var(--dim)">শীঘ্রই আসছে</span></div>
+    <p class="sub" style="margin-top:10px">Primary ও NTRCA-র বিগত সালের প্রশ্ন পরের ধাপে এখানে যোগ করা হবে।</p>
+  </div>
+</section>
+
+<!-- QUESTION BANK — ONE BCS YEAR (reading only: answers shown, no timer, no lock) -->
+<section class="view" id="view-qbank-year">
+  <div class="wrap">
+    <div class="shell-head"><button class="btn-back" id="btn-qbank-year-back" aria-label="Back">←</button><h1 id="qbank-year-title">BCS</h1></div>
+    <p class="sub" style="margin-top:12px">প্রশ্ন পড়ে একটি উত্তরে টিক দাও — সঠিক হলে সবুজ ✓, ভুল হলে লাল ✗ দেখাবে আর সঠিক উত্তরটা সবুজ হয়ে যাবে। ফেভারিটের পাশের “ব্যাখ্যা” বাটনে চাপ দিলে ওই প্রশ্নের বিস্তারিত ব্যাখ্যা খুলবে। বিষয় ধরে ছেঁকেও পড়া যাবে।</p>
+    <div id="qb-year-status"></div>
+    <div class="qb-subjects" id="qb-subjects" role="group" aria-label="বিষয় অনুযায়ী ছাঁকুন"></div>
+    <div class="stack" id="qb-list" style="margin-top:16px"></div>
   </div>
 </section>
 
@@ -836,7 +873,7 @@ var TESTS=[
 {id:"coaching-topics-100",post:"Exam -1",postEn:"টপিক ভিত্তিক মক টেস্ট — ১০০ MCQ",org:"Coaching Exam",date:"আপডেট: ২ নভেম্বর ২০২৬",minutes:90,marks:100,neg:0.5,isNew:true,coaching:true,subjects:"বাংলা প্রয়োগ-অপপ্রয়োগ ৩৫ • English Noun (সকল প্রকার) ৩৫ • জব সলুশন: ১০ম বিসিএস ১৫ • ১১তম বিসিএস ১৫ — মোট ১০০টি প্রশ্ন, Satt Academy প্রশ্নব্যাংক থেকে সংগৃহীত, তাদের ছাপানো উত্তরসহ।",questions:Q_COACHING}
 ];
 var LETTERS=["ক","খ","গ","ঘ","ঙ"], PER_PAGE=20;
-var state={name:"",phone:"",testId:null,answers:[],page:0,seconds:0,timerId:null,attempts:[],lastReview:null,lastTestId:null,favs:{},marked:{},reviewFilter:"all",submitted:false,detailId:null,detailFrom:"tests",seen:null};
+var state={name:"",phone:"",testId:null,answers:[],page:0,seconds:0,timerId:null,attempts:[],lastReview:null,lastTestId:null,favs:{},marked:{},reviewFilter:"all",submitted:false,detailId:null,detailFrom:"tests",seen:null,qbYear:null,qbSubject:"all",qbPicked:{},qbExpl:{}};
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
 function showView(id){var vs=document.querySelectorAll(".view");for(var i=0;i<vs.length;i++)vs[i].classList.remove("active");$(id).classList.add("active");window.scrollTo(0,0)}
@@ -901,6 +938,8 @@ function refreshView(id){
   if(id==="view-home")renderGrid();
   else if(id==="view-tests")renderTestsList();
   else if(id==="view-coaching")renderCoachingList();
+  else if(id==="view-qbank")renderQBank();
+  else if(id==="view-qbank-year")renderQbYear();
   else if(id==="view-results")renderResults();
   else if(id==="view-wrong")renderWrong();
   else if(id==="view-favourites")renderFlagged("fav");
@@ -985,7 +1024,8 @@ function loadFavs(){try{var raw=localStorage.getItem(LS_FAVS_KEY);if(!raw)return
 function saveFavs(){try{var k=userKey();if(!k)return;var raw=localStorage.getItem(LS_FAVS_KEY);var o={};if(raw){try{o=JSON.parse(raw)||{}}catch(e){o={}}}o[k]=state.favs;localStorage.setItem(LS_FAVS_KEY,JSON.stringify(o))}catch(e){}}
 /* NEW-CONTENT BADGES — the number on a home tile is an "unseen" count, not a total.
    It appears only when new content has arrived since the user last opened that
-   section: a newly added test, a fresh result, new wrong answers, a new favourite.
+   section: a newly added test, a fresh result, new wrong answers, a new favourite,
+   a newly filled question-bank year.
    Opening the section marks everything currently in it as seen, so the number is
    gone when the user comes back Home — and stays gone on later app opens — until
    something new is added again. Seen state is kept per user (mobile number) on
@@ -994,7 +1034,7 @@ function saveFavs(){try{var k=userKey();if(!k)return;var raw=localStorage.getIte
    genuine update lands. An attempt is identified by its testId (the lock system
    allows only one submitted attempt per test per user). */
 var LS_SEEN_KEY="chakriprep_seen_v1";
-var SEEN_SECTIONS=["tests","coaching","results","wrong","favs"];
+var SEEN_SECTIONS=["tests","coaching","results","wrong","favs","qbank"];
 function seenRead(){try{var raw=localStorage.getItem(LS_SEEN_KEY);if(!raw)return{};var o=JSON.parse(raw);return (o&&typeof o==="object")?o:{}}catch(e){return{}}}
 function currentSeen(){
   return {
@@ -1002,7 +1042,8 @@ function currentSeen(){
     coaching:TESTS.filter(function(t){return t.coaching}).map(function(t){return t.id}),
     results:state.attempts.map(function(a){return a.testId}),
     wrong:wrongItems().map(function(r){return fkey(r.testId,r.no)}),
-    favs:Object.keys(state.favs).filter(function(k){return state.favs[k]})
+    favs:Object.keys(state.favs).filter(function(k){return state.favs[k]}),
+    qbank:qbFilledYears()
   };
 }
 function loadSeen(){
@@ -1042,6 +1083,7 @@ function svgIcon(inner){return '<svg viewBox="0 0 24 24" fill="none" stroke="cur
 var TILES=[
 {label:"Mock Tests",icon:svgIcon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>'),color:"#0B5FA5",view:"view-tests",badge:function(){return unseenItems("tests",TESTS.filter(function(t){return !t.coaching}).map(function(t){return t.id}))||""}},
 {label:"Coaching Exam",icon:svgIcon('<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-3.5"/><line x1="22" y1="10" x2="22" y2="16"/>'),color:"#9A3412",view:"view-coaching",badge:function(){return unseenItems("coaching",TESTS.filter(function(t){return t.coaching}).map(function(t){return t.id}))||""}},
+{label:"Question Bank",icon:svgIcon('<ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5V12c0 1.7 3.6 3 8 3s8-1.3 8-3V5.5"/><path d="M4 12v6.5c0 1.7 3.6 3 8 3s8-1.3 8-3V12"/>'),color:"#6D4AC8",view:"view-qbank",badge:function(){return unseenItems("qbank",qbFilledYears())||""}},
 {label:"My Results",icon:svgIcon('<circle cx="12" cy="8" r="6"/><path d="M15.5 13.2 17 22l-5-3-5 3 1.5-8.8"/>'),color:"#1E7A46",view:"view-results",badge:function(){return unseenItems("results",state.attempts.map(function(a){return a.testId}))||""}},
 {label:"Wrong Review",icon:svgIcon('<circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>'),color:"#B3402F",view:"view-wrong",badge:function(){return unseenItems("wrong",wrongItems().map(function(r){return fkey(r.testId,r.no)}))||""}},
 {label:"Favourites",icon:svgIcon('<path d="M12 20.5C7 16.5 3 13.3 3 9.3 3 6.4 5.2 4.5 7.7 4.5c1.7 0 3.3.9 4.3 2.4 1-1.5 2.6-2.4 4.3-2.4 2.5 0 4.7 1.9 4.7 4.8 0 4-4 7.2-9 11.2z"/>'),color:"#B03A5B",view:"view-favourites",badge:function(){return unseenItems("favs",Object.keys(state.favs).filter(function(k){return state.favs[k]}))||""}},
@@ -1060,6 +1102,7 @@ function renderGrid(){
       if(t.coming){$("coming-title").textContent=t.coming;show("view-coming")}
       else if(t.view==="view-tests"){renderTestsList();show("view-tests")}
       else if(t.view==="view-coaching"){renderCoachingList();show("view-coaching")}
+      else if(t.view==="view-qbank"){renderQBank();show("view-qbank")}
       else if(t.view==="view-results"){renderResults();show("view-results")}
       else if(t.view==="view-wrong"){renderWrong();show("view-wrong")}
       else if(t.view==="view-favourites"){renderFlagged("fav");show("view-favourites")}
@@ -1119,6 +1162,197 @@ function renderCoachingList(){
     el.appendChild(testCard(t,"coaching"));
   });
 }
+/* QUESTION BANK — a bank of past BCS preliminary questions, organised by exam
+   (৪৭তম, ৪৬তম, …) and filterable by subject. There is deliberately no timer, no
+   negative marking and no submit/lock here: it doubles as reading and practice —
+   answers stay hidden until the reader taps an option (green ✓ when right, red ✗
+   when wrong, with the correct answer revealed), a Favourite pill sits under each
+   question, and a "ব্যাখ্যা" pill beside it opens that question's detailed
+   explanation. Favourited bank questions appear in the Favourites section like
+   any other question (see renderFlagged).
+   CONTENT RULE: only questions verified against a real past paper may be added,
+   with Satt Academy's question bank as the first source and its printed answer
+   kept verbatim. A cancelled question, or one whose answer differs between two
+   sources, must carry that fact in the question's "note" field, shown under the
+   question. A year whose questions have not been verified yet stays honestly
+   empty ("এখনো পাওয়া যায়নি") — questions are never invented to fill a year.
+   The ১০ম and ১১তম sets below are the exact Satt Academy-sourced questions
+   already used in Exam -1 (Q71–100), carried over unchanged, with a subject
+   tag added to each for the filter.
+   PARTIAL-SET RULE (2026-11-03): each BCS preliminary has about 100 questions.
+   Only 15 verified questions are available for the ১০ম and ১১তম sets, and a
+   complete verified 100-question set could not be obtained for this build, so
+   both years are marked complete:false / total:100 and MUST be labelled
+   “আংশিক” everywhere they appear (year list + year page). Never present a
+   partial set as a complete year, and never invent questions to fill it. */
+var QB_SUBJECTS=[
+{id:"all",label:"সব বিষয়"},
+{id:"bangla",label:"বাংলা"},
+{id:"english",label:"ইংরেজি"},
+{id:"math",label:"গণিত"},
+{id:"bangladesh",label:"বাংলাদেশ বিষয়াবলি"},
+{id:"international",label:"আন্তর্জাতিক বিষয়াবলি"},
+{id:"science",label:"বিজ্ঞান"}
+];
+var QB_SUBJECT_LABEL={bangla:"বাংলা",english:"ইংরেজি",math:"গণিত",bangladesh:"বাংলাদেশ বিষয়াবলি",international:"আন্তর্জাতিক বিষয়াবলি",science:"বিজ্ঞান"};
+var QB_BCS_10=[
+{text:"What is the synonym of ‘Jovial’?",options:["Jolly","Gay","Jealous","Happy"],correct:0,subject:"english",explanation:"সঠিক উত্তর: Jolly। 'Jovial' শব্দের অর্থ প্রফুল্ল, হাসিখুশি ও আনন্দময়। 'Jolly' শব্দের অর্থও ঠিক তাই — প্রফুল্ল ও মজাদার — তাই এটিই সঠিক সমার্থক শব্দ। তুলনায় 'Jealous' মানে ঈর্ষান্বিত, যা সম্পূর্ণ ভিন্ন অর্থ। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"মাছ অক্সিজেন নেয়-----",options:["মাঝে মাঝে পানির উপর নাক তুলে","পানিতে অক্সিজেন ও হাইড্রোজেন বিশ্লিষ্ট করে","পটকার মধ্যে জমানো বাতাস হতে","পানির মধ্যে দ্রবীভূত বাতাস হতে"],correct:3,subject:"science",explanation:"সঠিক উত্তর: পানির মধ্যে দ্রবীভূত বাতাস হতে। মাছ ফুলকার (গিল) সাহায্যে শ্বাস নেয়। পানি মুখ দিয়ে ফুলকার ওপর দিয়ে বয়ে যাওয়ার সময় পানিতে দ্রবীভূত অক্সিজেন রক্তে মিশে যায় এবং কার্বন ডাই-অক্সাইড বেরিয়ে আসে — তাই মাছকে অক্সিজেনের জন্য পানির উপরে নাক তুলতে হয় না। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"যে তিনটি মুখ্য বর্ণের সমন্বয়ে অন্যান্য বর্ণ সৃষ্টি করা যায় সেগুলো হলো-----",options:["লাল, হলুদ, নীল","লাল, কমলা, বেগুনি","হলুদ, সবুজ, নীল","লাল, নীল, সবুজ"],correct:3,subject:"science",explanation:"সঠিক উত্তর: লাল, নীল, সবুজ। আলোর তিনটি মৌলিক বা মুখ্য বর্ণ হলো লাল, নীল ও সবুজ (RGB)। এই তিনটি বর্ণের আলো বিভিন্ন অনুপাতে মিশিয়েই অন্যান্য প্রায় সব বর্ণ তৈরি করা যায় — টেলিভিশন ও মোবাইলের পর্দায় এভাবেই রং দেখানো হয়। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"যে বায়ু সর্বদাই উচ্চচাপ অঞ্চল হতে নিম্নচাপ অঞ্চলের দিকে প্রবাহিত হয়, তাকে বলা হয় ------",options:["আয়ন বায়ু","প্রত্যয়ন বায়ু","মৌসুমী বায়ু","নিয়ত বায়ু"],correct:3,subject:"science",explanation:"সঠিক উত্তর: নিয়ত বায়ু। যে বায়ু সারা বছর ধরে নির্দিষ্ট নিয়মে উচ্চচাপ অঞ্চল থেকে নিম্নচাপ অঞ্চলের দিকে প্রবাহিত হয়, তাকে নিয়ত বায়ু বলে — আয়ন বায়ু এর উদাহরণ। ঋতু বদলালে দিক বদলে যায় বলে মৌসুমী বায়ু নিয়ত বায়ু নয়। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"সমবাহু ত্রিভুজের বাহুর দৈর্ঘ্য যদি 'a' হয় তবে ক্ষেত্রফল হবে -",options:["(√3/2) a²","(√3/2) a","(√3/4) a²","(√3/4) a"],correct:2,subject:"math",explanation:"সঠিক উত্তর: (√3/4) a²। সমবাহু ত্রিভুজের ক্ষেত্রফলের সূত্র হলো (√3/4) × (বাহু)²। বাহুর দৈর্ঘ্য 'a' বসালেই পাওয়া যায় (√3/4)a²। √3/2 দিয়ে শুরু হওয়া অপশনগুলো এই সূত্রের দ্বিগুণ মান দেয়, তাই সেগুলো ভুল। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"টাকায় তিনটি করে আম ক্রয় করে টাকায় ২টি করে বিক্রয় করলে শতকরা কত লাভ হবে?",options:["৫০%","৩৩%","৩০%","৩১%"],correct:0,subject:"math",explanation:"সঠিক উত্তর: ৫০%। ১ টাকায় ৩টি আম কিনলে প্রতিটির ক্রয়মূল্য ১/৩ টাকা; ১ টাকায় ২টি বেচলে প্রতিটির বিক্রয়মূল্য ১/২ টাকা। লাভ = (১/২ − ১/৩) ÷ (১/৩) = ১/২, অর্থাৎ শতকরা ৫০%। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"১ থেকে ৪৯ পর্যন্ত সংখ্যার গড় কত?",options:["২৩","২৪.৫","২৫","২৬.৫"],correct:2,subject:"math",explanation:"সঠিক উত্তর: ২৫। ধারাবাহিক সংখ্যার গড় বের করার সহজ নিয়ম: (প্রথম সংখ্যা + শেষ সংখ্যা) ÷ ২। এখানে (১ + ৪৯) ÷ ২ = ২৫। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"a + b = 5 এবং a - b = 3 হলে ab এর মান কত?",options:["2","3","4","5"],correct:2,subject:"math",explanation:"সঠিক উত্তর: 4। (a + b)² − (a − b)² = 4ab — এই সূত্রে মান বসালে ৫² − ৩² = ২৫ − ৯ = ১৬ = 4ab, সুতরাং ab = ১৬ ÷ ৪ = 4। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"১ হতে ৩০ পর্যন্ত কয়টি মৌলিক সংখ্যা আছে?",options:["১১টি","৮টি","১০টি","৯টি"],correct:2,subject:"math",explanation:"সঠিক উত্তর: ১০টি। ১ থেকে ৩০ পর্যন্ত মৌলিক সংখ্যাগুলো হলো: ২, ৩, ৫, ৭, ১১, ১৩, ১৭, ১৯, ২৩ ও ২৯ — মোট ১০টি। মনে রাখতে হবে, ১ কিন্তু মৌলিক সংখ্যা নয়। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"যদি (x-5)(a+x)= x 2 - 25 হয় তবে a এর মান কত?",options:["-5","5","25","-25"],correct:1,subject:"math",explanation:"সঠিক উত্তর: 5। x² − 25 = (x − 5)(x + 5)। প্রশ্নের বাম পক্ষ (x − 5)(a + x) এর সঙ্গে তুলনা করলেই দেখা যায় a + x = x + 5, তাই a = 5। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"'কবর' নাটকটির লেখক----",options:["জহির রায়হান","মুনীর চৌধুরী","কাজী নজরুল ইসলাম","জসীমউদ্দীন"],correct:1,subject:"bangla",explanation:"সঠিক উত্তর: মুনীর চৌধুরী। 'কবর' ভাষা শহীদদের স্মরণে রচিত মুনীর চৌধুরীর বিখ্যাত নাটক। ভাষা আন্দোলনের পটভূমিতে লেখা এই নাটকটি বাংলা নাট্যসাহিত্যের অন্যতম শ্রেষ্ঠ রচনা হিসেবে পরিচিত। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"বাংলাদেশে চীনামাটির সন্ধান পাওয়া গেছে-----",options:["বিজয়পুরে","রানিগঞ্জে","টেকেরহাটে","বিয়ানী বাজারে"],correct:0,subject:"bangladesh",explanation:"সঠিক উত্তর: বিজয়পুরে। বাংলাদেশে চীনামাটির (কেওলিন) প্রধান সন্ধান পাওয়া গেছে নেত্রকোনা জেলার বিজয়পুরে। সিরামিক ও পোর্সেলিন শিল্পে এই মাটি ব্যবহৃত হয়। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"বিখ্যাত সাধক শাহ সুলতান বলখীর মাজার কোথায়?",options:["মহাস্থানগড়ে","শাহজাদপুরে","নেত্রকোনায়","রামপালে"],correct:0,subject:"bangladesh",explanation:"সঠিক উত্তর: মহাস্থানগড়ে। বিখ্যাত সুফি সাধক শাহ সুলতান বলখীর মাজার বগুড়া জেলার মহাস্থানগড়ে অবস্থিত। মহাস্থানগড় বাংলাদেশের প্রাচীনতম নগরী পুণ্ড্রনগরের ধ্বংসাবশেষের জন্যও বিখ্যাত। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"ঢাকায় সর্বপ্রথম কবে বাংলার রাজধানী স্থাপিত হয়?",options:["১২০৬ খ্রিঃ","১৩১০ খ্রিঃ","১৫২৬ খ্রিঃ","১৬১০ খ্রিঃ"],correct:3,subject:"bangladesh",explanation:"সঠিক উত্তর: ১৬১০ খ্রিঃ। ১৬১০ সালে সুবাদার ইসলাম খান চিশতী ঢাকায় বাংলার রাজধানী স্থাপন করেন। সম্রাট জাহাঙ্গীরের নামানুসারে তখন ঢাকার নাম রাখা হয় জাহাঙ্গীরনগর। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"},
+{text:"সাধারণ পরিষদের নিয়মিত অধিবেশন শুরু হয়-----",options:["সেপ্টেম্বর মাসের দ্বিতীয় মঙ্গলবার","সেপ্টেম্বর মাসের প্রথম সোমবার","সেপ্টেম্বর মাসের দ্বিতীয় বুধবার","সেপ্টেম্বর মাসের চতুর্থ মঙ্গলবার"],correct:0,subject:"international",explanation:"সঠিক উত্তর: সেপ্টেম্বর মাসের দ্বিতীয় মঙ্গলবার। জাতিসংঘ সাধারণ পরিষদের নিয়মিত অধিবেশন প্রতি বছর সেপ্টেম্বর মাসে শুরু হয়; এই প্রশ্নের ছাপা উত্তর অনুযায়ী অধিবেশন শুরু হয় সেপ্টেম্বর মাসের দ্বিতীয় মঙ্গলবার। সূত্র: ১০ম বিসিএস প্রিলিমিনারি (১৯৯০) • Satt Academy।"}
+];
+var QB_BCS_11=[
+{text:"বাংলাদেশের কোন জেলায় সবচেয়ে বেশি পাট উৎপন্ন হয়?",options:["রংপুর","ময়মনসিংহ","টাঙ্গাইল","ফরিদপুর"],correct:3,subject:"bangladesh",explanation:"সঠিক উত্তর: ফরিদপুর। এই প্রশ্নের ছাপা উত্তর অনুযায়ী ওই সময়ে ফরিদপুর জেলায় সবচেয়ে বেশি পাট উৎপন্ন হতো। ফরিদপুর অঞ্চল ঐতিহাসিকভাবে পাট চাষ ও পাট বাণিজ্যের জন্য পরিচিত ছিল। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"এডেন কোন দেশের সমুদ্রবন্দর?",options:["ইয়েমেন","কাতার","ওমান","ইরাক"],correct:0,subject:"international",explanation:"সঠিক উত্তর: ইয়েমেন। এডেন ইয়েমেনের বিখ্যাত সমুদ্রবন্দর। লোহিত সাগর ও আরব সাগরের সংযোগপথে অবস্থিত বলে আন্তর্জাতিক বাণিজ্যে এই বন্দরের গুরুত্ব অনেক। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"নামিবিয়ার রাজধানী ------",options:["কারাভু","উইন্ডহুক","প্রিটোরিয়া","কোয়াভি"],correct:1,subject:"international",explanation:"সঠিক উত্তর: উইন্ডহুক। নামিবিয়ার রাজধানী উইন্ডহুক। দক্ষিণ-পশ্চিম আফ্রিকার এই দেশটি ১৯৯০ সালে স্বাধীনতা পায়। প্রিটোরিয়া দক্ষিণ আফ্রিকার রাজধানী — কাছাকাছি নামের কারণে গুলিয়ে ফেলা সহজ। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"বাংলাদেশের বৃহত্তম নদী কোনটি?",options:["মেঘনা","পদ্মা","ব্রহ্মপুত্র","যমুনা"],correct:1,subject:"bangladesh",explanation:"সঠিক উত্তর: পদ্মা। এই প্রশ্নের ছাপা উত্তর অনুযায়ী বাংলাদেশের বৃহত্তম নদী পদ্মা। গঙ্গা নদী বাংলাদেশে প্রবেশ করে পদ্মা নাম ধারণ করেছে এবং এটি দেশের প্রধান নদীগুলোর একটি। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"আন্তর্জাতিক পরিবেশ দিবস পালিত হয় -----",options:["৭ জুলাই","৯ মার্চ","৫ জুন","২১ মে"],correct:2,subject:"international",explanation:"সঠিক উত্তর: ৫ জুন। প্রতি বছর ৫ জুন বিশ্ব পরিবেশ দিবস পালিত হয়। পরিবেশ সংরক্ষণে সচেতনতা বাড়াতে জাতিসংঘের উদ্যোগে এই দিবসটি পালন করা হয়। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"( x + 3 ) ( x - 3 ) কে x 2 - 6 দিয়ে ভাগ করলে ভাগশেষ কত হবে?",options:["-6","3","6","-3"],correct:3,subject:"math",explanation:"সঠিক উত্তর: -3। (x + 3)(x − 3) = x² − 9। একে x² − 6 দিয়ে ভাগ করলে ভাগফল ১ এবং ভাগশেষ হয় (−9) − (−6) = −3, কারণ x² − 9 = (x² − 6) − 3। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"'সংশয়'- এর বিপরীতার্থক শব্দ কোনটি?",options:["নির্ভয়","বিস্ময়","প্রত্যয়","দ্বিধা"],correct:2,subject:"bangla",explanation:"সঠিক উত্তর: প্রত্যয়। 'সংশয়' শব্দের অর্থ সন্দেহ বা দ্বিধা। এর বিপরীত 'প্রত্যয়' — যার অর্থ দৃঢ় বিশ্বাস বা আস্থা। 'নির্ভয়' মানে ভয়শূন্য, যা সংশয়ের বিপরীত নয়। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"Choose the correct sentence-",options:["Rich is not always happy","The rich is not always happy","The rich is not happy always","The rich are not always happy"],correct:3,subject:"english",explanation:"সঠিক উত্তর: The rich are not always happy। 'The rich' বলতে ধনী সম্প্রদায় বা ধনী লোকদের সমষ্টিকে বোঝায়, তাই এটিকে plural ধরে 'are' বসে। বাকি অপশনগুলোতে 'is' ব্যবহার করা হয়েছে, যা এই অর্থে ভুল। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"What is the synonym of 'Incite'?",options:["Instigate","Permit","Urge","Deceive"],correct:0,subject:"english",explanation:"সঠিক উত্তর: Instigate। 'Incite' শব্দের অর্থ উসকানি দেওয়া বা প্ররোচিত করা। 'Instigate' শব্দের অর্থও একই — কাউকে কোনো কাজে প্ররোচিত করা — তাই এটিই সঠিক সমার্থক শব্দ। 'Permit' মানে অনুমতি দেওয়া, অর্থ আলাদা। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"What is the antonym of 'Honorary'?",options:["Officials","Honorable","Salaried","Literary"],correct:2,subject:"english",explanation:"সঠিক উত্তর: Salaried। 'Honorary' মানে সম্মানসূচক ও অবৈতনিক — বেতন ছাড়া সম্মানের জন্য দেওয়া পদ। এর বিপরীত 'Salaried', অর্থাৎ বেতনভোগী। 'Honorable' মানে সম্মানিত — এটি বিপরীত শব্দ নয়। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"২ টা ১৫ মিনিটের সময় ঘন্টার কাঁটা ও মিনিটের কাঁটার মধ্যে কত ডিগ্রি কোণ উৎপন্ন হয়?",options:["২৩°","২২.৫°","২০°","২৩.৫°"],correct:1,subject:"math",explanation:"সঠিক উত্তর: ২২.৫°। ২টা ১৫ মিনিটে মিনিটের কাঁটা ৩-এর ঘরে, অর্থাৎ ৯০° কোণে থাকে। ঘণ্টার কাঁটা তখন ২ পেরিয়ে আরও এক-চতুর্থাংশ পথ এগিয়ে ৬৭.৫°-এ থাকে। দুই কাঁটার মধ্যে পার্থক্য ৯০ − ৬৭.৫ = ২২.৫°। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"সর্বপ্রথমে যে উফশি ধান এ দেশে চালু হয়ে এখনো বর্তমান রয়েছে তা হলো----",options:["ইরি - ৮","ইরি - ১","ইরি - ২০","ইরি - ৩"],correct:0,subject:"bangladesh",explanation:"সঠিক উত্তর: ইরি - ৮। এই প্রশ্নের ছাপা উত্তর অনুযায়ী এ দেশে সর্বপ্রথম চালু হওয়া উফশি (উচ্চ ফলনশীল) ধানের জাত ইরি-৮। আন্তর্জাতিক ধান গবেষণা ইনস্টিটিউট (IRRI) উদ্ভাবিত এই জাতগুলো ষাটের দশক থেকে এ দেশে চাষ হয়ে আসছে। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"মাইক্রোওয়েভের মাধ্যমে যে টেলিযোগাযোগ ব্যবস্থা আমাদের দেশে প্রচলিত তাতে মাইক্রোওয়েভ অধিকাংশ দূরত্ব অতিক্রম করে -----",options:["ওয়েভ গাইডের মধ্য দিয়ে","ভূমি ও আয়নোস্ফেয়ারের মধ্যে প্রতিফলন হতে হবে","বিশেষ ধরনের ক্যাবলের মধ্য দিয়ে","খোলামেলা জায়গার মধ্য দিয়ে সরল রেখায়"],correct:3,subject:"science",explanation:"সঠিক উত্তর: খোলামেলা জায়গার মধ্য দিয়ে সরল রেখায়। মাইক্রোওয়েভের তরঙ্গদৈর্ঘ্য খুব ছোট বলে তা সরলরেখায় চলে এবং সহজে বাঁক নেয় না। তাই মাইক্রোওয়েভ টেলিযোগাযোগে সংকেত খোলামেলা জায়গা দিয়ে সরল রেখায় (দৃষ্টিসীমার মধ্যে) অতিক্রম করে — এজন্যই নির্দিষ্ট দূরত্ব পরপর রিপিটার স্টেশন বসাতে হয়। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"What is the verb of the word 'Ability'?",options:["Ableness","Able","Ably","Enable"],correct:3,subject:"english",explanation:"সঠিক উত্তর: Enable। 'Ability' (সামর্থ্য) শব্দের verb রূপ 'Enable' — অর্থ কাউকে সক্ষম করা। 'Able' হলো adjective (সক্ষম) আর 'Ably' হলো adverb (দক্ষতার সঙ্গে)। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"},
+{text:"'Syntax' means-",options:["Manner of speech","Sentence building","Supplementary tax","synchronizing act"],correct:1,subject:"english",explanation:"সঠিক উত্তর: Sentence building। 'Syntax' বলতে বাক্যের গঠন ও শব্দ সাজানোর নিয়মকে বোঝায় — অর্থাৎ sentence building বা বাক্যতত্ত্ব। শব্দের অর্থ নিয়ে আলোচনা হয় Semantics-এ, Syntax-এ নয়। সূত্র: ১১তম বিসিএস প্রিলিমিনারি (১৯৯১) • Satt Academy।"}
+];
+/* every BCS preliminary from the 47th down to the 10th is listed; only the years
+   in QB_BCS_DATA have verified questions so far — the rest render as not found */
+var QB_BCS_YEARS=[];
+for(var qbn=47;qbn>=10;qbn--)QB_BCS_YEARS.push(qbn);
+var QB_BCS_DATA={
+"10":{year:"১৯৯০",total:100,complete:false,questions:QB_BCS_10},
+"11":{year:"১৯৯১",total:100,complete:false,questions:QB_BCS_11}
+};
+function bnNum(s){return String(s).replace(/\d/g,function(d){return "০১২৩৪৫৬৭৮৯"[parseInt(d,10)]})}
+function bnOrd(n){return bnNum(n)+"তম BCS"}
+function qbFilledYears(){return Object.keys(QB_BCS_DATA).filter(function(k){return QB_BCS_DATA[k].questions&&QB_BCS_DATA[k].questions.length}).map(function(k){return "bcs-"+k})}
+function renderQBank(){
+  markSeen("qbank");
+  var el=$("qbank-years");el.innerHTML="";
+  QB_BCS_YEARS.forEach(function(n){
+    var d=QB_BCS_DATA[n];
+    var b=document.createElement("button");b.className="test-card";b.setAttribute("aria-label",bnOrd(n));
+    if(d&&!d.complete){
+      b.innerHTML='<p class="post">'+bnOrd(n)+'<span class="partial-badge">আংশিক — সম্পূর্ণ নয়</span></p>'
+        +'<p class="org">প্রিলিমিনারি • '+d.year+' • আংশিক সেট</p>'
+        +'<div class="chips"><span class="chip partial">আংশিক: মাত্র '+bnNum(d.questions.length)+'টি / প্রায় '+bnNum(d.total)+'টি প্রশ্ন</span><span class="chip">সম্পূর্ণ সালের প্রশ্ন নয়</span></div>'
+        +'<p class="org" style="margin-top:8px">এই সালে মোট প্রায় '+bnNum(d.total)+'টি প্রশ্ন ছিল। এখানে এখন শুধু '+bnNum(d.questions.length)+'টি যাচাই করা প্রশ্ন আছে — বাকিগুলো যাচাই করা যায়নি, তাই বানানো প্রশ্ন যোগ করা হয়নি।</p>'
+        +'<p class="go">আংশিক প্রশ্নগুলো দেখো →</p>';
+    }else if(d){
+      b.innerHTML='<p class="post">'+bnOrd(n)+'<span class="new-badge">সম্পূর্ণ</span></p>'
+        +'<p class="org">প্রিলিমিনারি • '+d.year+'</p>'
+        +'<div class="chips"><span class="chip">'+bnNum(d.questions.length)+'টি প্রশ্ন</span><span class="chip none">ব্যাখ্যাসহ • নিজে টিক দিয়ে যাচাই</span></div>'
+        +'<p class="go">প্রশ্ন ও উত্তর দেখো →</p>';
+    }else{
+      b.innerHTML='<p class="post">'+bnOrd(n)+'</p>'
+        +'<p class="org">প্রিলিমিনারি</p>'
+        +'<div class="chips"><span class="chip">সম্পূর্ণ সেট এখনো যাচাই করা যায়নি — প্রশ্ন যোগ করা হয়নি</span></div>'
+        +'<p class="go">বিস্তারিত →</p>';
+    }
+    b.onclick=function(){openQbYear(n)};
+    el.appendChild(b);
+  });
+}
+function openQbYear(n){
+  state.qbYear=n;state.qbSubject="all";
+  renderQbYear();show("view-qbank-year");
+}
+function renderQbYear(){
+  var n=state.qbYear;if(n===null||n===undefined)return;
+  var d=QB_BCS_DATA[n];
+  var isPartial=!!(d&&!d.complete);
+  $("qbank-year-title").textContent=bnOrd(n)+(isPartial?" — আংশিক":"");
+  var statusEl=$("qb-year-status");
+  if(statusEl){
+    if(isPartial){
+      statusEl.innerHTML='<div class="qb-partial-banner" role="alert"><b>⚠ আংশিক সেট — এটি সম্পূর্ণ সালের প্রশ্ন নয়</b><br>এই BCS প্রিলিমিনারিতে মোট প্রায় '+bnNum(d.total)+'টি প্রশ্ন ছিল, কিন্তু এখানে এখন মাত্র <b>'+bnNum(d.questions.length)+'টি</b> যাচাই করা প্রশ্ন আছে। সম্পূর্ণ '+bnNum(d.total)+'টি প্রশ্নের Satt Academy সেট এই পর্যায়ে যাচাই করা যায়নি, তাই বাকি প্রশ্ন বানিয়ে যোগ করা হয়নি। নিচের প্রশ্নগুলো শুধু ওই '+bnNum(d.questions.length)+'টি যাচাই করা প্রশ্নই — এগুলো পড়লেই পুরো সাল শেষ হয়েছে ভাবা যাবে না। সম্পূর্ণ সেট যাচাই করা গেলে এই আংশিক লেখাটি সরিয়ে সম্পূর্ণ সেট বসানো হবে।</div>';
+    }else if(d){
+      statusEl.innerHTML="";
+    }else{
+      statusEl.innerHTML='<div class="qb-partial-banner" role="alert"><b>এই সালের সম্পূর্ণ সেট এখনো যাচাই করা যায়নি</b><br>তাই এখানে কোনো প্রশ্ন বসানো হয়নি — আংশিক বা বানানো প্রশ্ন দিয়ে সালটি পূরণ করা হয়নি।</div>';
+    }
+  }
+  var chips=$("qb-subjects");chips.innerHTML="";
+  QB_SUBJECTS.forEach(function(s){
+    var cnt=!d?0:(s.id==="all"?d.questions.length:d.questions.filter(function(q){return q.subject===s.id}).length);
+    if(s.id!=="all"&&cnt===0)return;
+    var b=document.createElement("button");
+    b.textContent=s.label+(d?" ("+bnNum(cnt)+")":"");
+    if(state.qbSubject===s.id)b.className="on";
+    b.setAttribute("aria-label",s.label);
+    b.onclick=function(){state.qbSubject=s.id;renderQbYear()};
+    chips.appendChild(b);
+  });
+  var el=$("qb-list");
+  if(!d){
+    el.innerHTML='<div class="card" style="text-align:center;padding:32px 18px"><p style="font-weight:700;margin:0 0 4px;font-size:16px">এই সালের সম্পূর্ণ সেট এখনো যাচাই করা যায়নি</p><p style="color:var(--dim);font-size:15px;margin:0;line-height:1.7">Satt Academy প্রশ্নব্যাংক থেকে সম্পূর্ণ সেট যাচাই করা গেলেই এখানে যোগ করা হবে। আংশিক বা বানানো প্রশ্ন দিয়ে এই সাল পূরণ করা হয়নি।</p></div>';
+    return;
+  }
+  var items=d.questions.map(function(q,i){return {q:q,no:i+1}}).filter(function(x){return state.qbSubject==="all"||x.q.subject===state.qbSubject});
+  if(!items.length){el.innerHTML='<p class="empty">এই বিষয়ের কোনো প্রশ্ন এই সালে এখনো যোগ করা হয়নি।</p>';return}
+  el.innerHTML=items.map(function(x){
+    var q=x.q,key=n+":"+x.no;
+    var picked=state.qbPicked[key];
+    var answered=picked!==undefined&&picked!==null;
+    /* answers stay hidden while reading: tapping an option checks it on the spot —
+       the right one turns green (✓), a wrong pick turns red (✗) and the correct
+       answer is revealed in green. No score, no lock, no submit — reading and
+       self-testing in one place. Picks live in memory for this session only. */
+    var opts=q.options.map(function(o,oi){
+      var cls="opt",mark=LETTERS[oi];
+      if(answered){
+        if(oi===q.correct){cls+=" sel";mark="✓"}
+        else if(oi===picked){cls+=" wrong";mark="✗"}
+        else{cls+=" locked"}
+      }
+      return '<button class="'+cls+'" onclick="qbPick('+n+','+x.no+','+oi+')"'+(answered?' disabled aria-disabled="true"':'')+'><span class="L">'+mark+'</span>'+esc(o)+'</button>';
+    }).join("");
+    var fk=fkey("qb-"+n,x.no);
+    var showExpl=!!state.qbExpl[key];
+    return '<div class="rcard" id="qbk-'+x.no+'"><div class="top"><p class="qtext"><span class="qn">'+bnNum(x.no)+'.</span>'+esc(q.text)+'</p><span class="qb-subj">'+QB_SUBJECT_LABEL[q.subject]+'</span></div>'
+      +'<div class="opts">'+opts+'</div>'
+      +'<div class="qactions" style="justify-content:space-between">'
+      +'<button class="pillbtn'+(state.favs[fk]?" fav-on":"")+'" onclick="qbToggleFav('+n+','+x.no+')">'+(state.favs[fk]?"♥ ফেভারিট":"♡ ফেভারিট")+'</button>'
+      +'<button class="pillbtn" onclick="qbToggleExpl('+n+','+x.no+')" aria-expanded="'+showExpl+'">ব্যাখ্যা '+(showExpl?"▴":"▾")+'</button>'
+      +'</div>'
+      +(showExpl?'<p class="expl">'+esc(q.explanation)+'</p>':"")
+      +(q.note?'<p class="qb-note">'+esc(q.note)+'</p>':"")
+      +'</div>';
+  }).join("")+(isPartial&&state.qbSubject==="all"?'<div class="qb-partial-banner"><b>এখানেই আংশিক সেটটি শেষ</b> — উপরে ছিল এই সালের মাত্র '+bnNum(d.questions.length)+'টি যাচাই করা প্রশ্ন। সালটিতে মোট প্রায় '+bnNum(d.total)+'টি প্রশ্ন ছিল; বাকি প্রশ্নগুলো এখনো এখানে নেই।</div>':"");
+}
+function qbScrollTo(no){var el=document.getElementById("qbk-"+no);if(el)el.scrollIntoView({block:"start"})}
+window.qbPick=function(n,no,oi){
+  var key=n+":"+no;
+  if(state.qbPicked[key]!==undefined&&state.qbPicked[key]!==null)return;
+  state.qbPicked[key]=oi;
+  renderQbYear();qbScrollTo(no);
+};
+window.qbToggleExpl=function(n,no){
+  var key=n+":"+no;
+  state.qbExpl[key]=!state.qbExpl[key];
+  renderQbYear();qbScrollTo(no);
+};
+window.qbToggleFav=function(n,no){
+  var fk=fkey("qb-"+n,no);
+  state.favs[fk]=!state.favs[fk];saveFavs();renderGrid();
+  renderQbYear();qbScrollTo(no);
+};
+$("btn-qbank-year-back").onclick=function(){renderQBank();show("view-qbank")};
+
 function openTestDetail(id,from){
   var t=getTest(id);state.detailId=id;state.detailFrom=from||"tests";
   $("detail-org").textContent=t.org;
@@ -1374,8 +1608,13 @@ function renderFlagged(kind){
   if(!keys.length){el.innerHTML='<p class="empty">'+(kind==="fav"?"এখনো কোনো প্রশ্ন ফেভারিট করোনি। টেস্টের সময় ♡ চাপ দিলেই এখানে জমা হবে।":"পরে দেখার জন্য কোনো প্রশ্ন মার্ক করোনি।")+'</p>';return}
   keys.sort();
   el.innerHTML=keys.map(function(k){
-    var parts=k.split(":");var tid=parts[0],no=parseInt(parts[1],10);var t=getTest(tid);var q=t.questions[no-1];if(!q)return "";
-    return '<p class="sub" style="margin:0 0 -4px;font-weight:600">'+esc(t.post)+'</p>'+reviewCard({testId:tid,no:no,text:q.text,options:q.options,correct:q.correct,chosen:null,explanation:q.explanation,status:"skipped"},true);
+    var parts=k.split(":");var tid=parts[0],no=parseInt(parts[1],10);
+    /* question-bank favourites carry a "qb-<exam no>" id and resolve against the
+       bank's own question sets, not the mock tests */
+    var qbm=/^qb-(\d+)$/.exec(tid),title,q;
+    if(qbm){var qbd=QB_BCS_DATA[qbm[1]];if(!qbd||!qbd.questions[no-1])return "";title=bnOrd(parseInt(qbm[1],10))+" — Question Bank";q=qbd.questions[no-1]}
+    else{var t=getTest(tid);title=t.post;q=t.questions[no-1];if(!q)return ""}
+    return '<p class="sub" style="margin:0 0 -4px;font-weight:600">'+esc(title)+'</p>'+reviewCard({testId:tid,no:no,text:q.text,options:q.options,correct:q.correct,chosen:null,explanation:q.explanation,status:"skipped"},true);
   }).join("");
 }
 /* PWA manifest — injected so the hosted page can be installed / wrapped as an app */
