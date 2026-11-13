@@ -1361,28 +1361,79 @@ function negText(t){return t.neg===0?"নেই ✓":"প্রতি ভুল�
 function isBlindTest(t){return !!t&&t.blind!==false}
 /* RESULT COLLECTION — on submit, the result is posted once to the owner's Google
    Form, which collects every candidate's result in one place (name, test, score
-   and counts only — the mobile number is never sent). Fire-and-forget: no-cors,
-   never awaited, never blocks the confirmation screen, and any failure is
-   swallowed silently so the test taker never sees an error. */
+   and counts only — the mobile number is never sent). Fire-and-forget: never
+   awaited, never blocks the confirmation screen, and any failure is swallowed
+   silently so the test taker never sees an error.
+   WHY A REAL FORM POST, NOT fetch: Google Forms parses the answers out of the
+   POST body ONLY when the request arrives as a genuine
+   application/x-www-form-urlencoded form submission. A fetch() POST whose
+   Content-Type does not survive the trip (the served build routes fetch
+   through a proxy shim, and the header is lost on the way) reaches Google as
+   text/plain instead — the form then records a response with only the
+   timestamp and every field blank, which is exactly the failure seen live:
+   rows arrived, but name/test/score/counts were all empty. A native <form>
+   POST into a hidden iframe cannot lose its encoding — the browser builds
+   the urlencoded body itself at submit time, exactly as if a person had
+   filled in the Google Form — so the values always land in the Sheet. If the
+   form post never completes (its iframe never loads), the old urlencoded
+   fetch fires once as a fallback. */
 var RESULT_FORM_URL="https://docs.google.com/forms/d/e/1FAIpQLSfCDob5sD39T4sMtgXdegmd3zkyqWFVU56g-jRIKQlLEm23cQ/formResponse";
-function sendResultToForm(t,score,correct,wrong,skipped,total){
+var RESULT_ENTRY_IDS=["entry.198538670","entry.299407817","entry.855224033","entry.232519188","entry.1827581229","entry.2037261594","entry.1924972192"];
+var resultSink=null;
+function ensureResultSink(){
+  if(resultSink)return resultSink;
+  var iframe=document.createElement("iframe");
+  iframe.name="chakriprep-result-sink";
+  iframe.style.display="none";
+  iframe.setAttribute("aria-hidden","true");
+  document.body.appendChild(iframe);
+  var form=document.createElement("form");
+  form.method="POST";
+  form.action=RESULT_FORM_URL;
+  form.target="chakriprep-result-sink";
+  form.enctype="application/x-www-form-urlencoded";
+  form.style.display="none";
+  var inputs={};
+  RESULT_ENTRY_IDS.forEach(function(n){
+    var inp=document.createElement("input");
+    inp.type="hidden";inp.name=n;inp.value="";
+    form.appendChild(inp);inputs[n]=inp;
+  });
+  document.body.appendChild(form);
+  resultSink={form:form,iframe:iframe,inputs:inputs};
+  return resultSink;
+}
+function fetchResultFallback(values){
   try{
     var params=new URLSearchParams();
-    params.append("entry.198538670",state.name||"");
-    params.append("entry.299407817",t.post||"");
-    params.append("entry.855224033",score+"/"+total);
-    params.append("entry.232519188",String(correct));
-    params.append("entry.1827581229",String(wrong));
-    params.append("entry.2037261594",String(skipped));
-    params.append("entry.1924972192",String(total));
-    /* The values must go out as a real urlencoded string body. Passing the
-       URLSearchParams object itself under a forced "text/plain" Content-Type
-       made Google Forms record the submission (timestamp only) but discard
-       every answer — the form endpoint only parses entry.* fields out of an
-       application/x-www-form-urlencoded body. That content type is
-       CORS-safelisted, so no-cors still sends it without a preflight. */
+    RESULT_ENTRY_IDS.forEach(function(n){params.append(n,values[n])});
     fetch(RESULT_FORM_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:params.toString()}).catch(function(){});
   }catch(e){}
+}
+function sendResultToForm(t,score,correct,wrong,skipped,total){
+  var values={};
+  values["entry.198538670"]=state.name||"";
+  values["entry.299407817"]=t.post||"";
+  values["entry.855224033"]=score+"/"+total;
+  values["entry.232519188"]=String(correct);
+  values["entry.1827581229"]=String(wrong);
+  values["entry.2037261594"]=String(skipped);
+  values["entry.1924972192"]=String(total);
+  try{
+    var sink=ensureResultSink();
+    RESULT_ENTRY_IDS.forEach(function(n){sink.inputs[n].value=values[n]});
+    var loaded=false;
+    var onLoad=function(){loaded=true};
+    sink.iframe.addEventListener("load",onLoad);
+    sink.form.submit();
+    /* if the form post never lands (blocked iframe, dropped navigation), fall
+       back to the urlencoded fetch once — never both in the normal case, so
+       no duplicate rows */
+    setTimeout(function(){
+      sink.iframe.removeEventListener("load",onLoad);
+      if(!loaded)fetchResultFallback(values);
+    },6000);
+  }catch(e){fetchResultFallback(values)}
 }
 
 /* LOCK SYSTEM — a test submitted once stays locked for that user on this device/browser:
