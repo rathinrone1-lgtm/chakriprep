@@ -1367,15 +1367,21 @@ function isBlindTest(t){return !!t&&t.blind!==false}
 var RESULT_FORM_URL="https://docs.google.com/forms/d/e/1FAIpQLSfCDob5sD39T4sMtgXdegmd3zkyqWFVU56g-jRIKQlLEm23cQ/formResponse";
 function sendResultToForm(t,score,correct,wrong,skipped,total){
   try{
-    var body=new URLSearchParams();
-    body.append("entry.198538670",state.name||"");
-    body.append("entry.299407817",t.post);
-    body.append("entry.855224033",score+"/"+total);
-    body.append("entry.232519188",String(correct));
-    body.append("entry.1827581229",String(wrong));
-    body.append("entry.2037261594",String(skipped));
-    body.append("entry.1924972192",String(total));
-    fetch(RESULT_FORM_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:body}).catch(function(){});
+    var params=new URLSearchParams();
+    params.append("entry.198538670",state.name||"");
+    params.append("entry.299407817",t.post||"");
+    params.append("entry.855224033",score+"/"+total);
+    params.append("entry.232519188",String(correct));
+    params.append("entry.1827581229",String(wrong));
+    params.append("entry.2037261594",String(skipped));
+    params.append("entry.1924972192",String(total));
+    /* The values must go out as a real urlencoded string body. Passing the
+       URLSearchParams object itself under a forced "text/plain" Content-Type
+       made Google Forms record the submission (timestamp only) but discard
+       every answer — the form endpoint only parses entry.* fields out of an
+       application/x-www-form-urlencoded body. That content type is
+       CORS-safelisted, so no-cors still sends it without a preflight. */
+    fetch(RESULT_FORM_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:params.toString()}).catch(function(){});
   }catch(e){}
 }
 
