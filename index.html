@@ -138,6 +138,8 @@ h1.welcome{font-size:22px;line-height:1.35;margin:16px 0 2px}
 .score-hero .big{font-size:48px;font-weight:700;margin:4px 0}
 .score-hero .big small{font-size:20px;opacity:.7}
 .score-hero .d{font-size:14px;margin:0}
+.sent-check{width:64px;height:64px;margin:2px auto 12px;border:2px solid rgba(255,255,255,.85);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.sent-check svg{width:30px;height:30px}
 .seg{display:flex;gap:8px;margin-top:16px}
 .seg button{flex:1;border-radius:12px;padding:10px;font-size:14px;font-weight:700;border:1px solid var(--border);background:var(--surface);color:var(--text)}
 .seg button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -303,10 +305,10 @@ h1.welcome{font-size:22px;line-height:1.35;margin:16px 0 2px}
       <ul class="rules">
         <li>প্রতি পেজে <b>২০টি করে</b> প্রশ্ন — স্ক্রল করে উত্তর দাও।</li>
         <li>কোনো প্রশ্নে <b>একবার উত্তর দিলে তা চূড়ান্ত</b> — সবুজ চিহ্নে লক হয়ে যাবে, আর বদলানো যাবে না। তাই ভেবেচিন্তে উত্তর দাও।</li>
-        <li>একটি টেস্ট <b>একবার জমা দিলেই লক</b> হয়ে যাবে — একই টেস্ট নতুন করে আবার দেওয়া যাবে না। জমা দেওয়া উত্তরগুলো রিভিউতে <b>মার্ক করা অবস্থায়</b> থেকে যাবে, যেকোনো সময় দেখতে পারবে।</li>
+        <li>একটি টেস্ট <b>একবার জমা দিলেই লক</b> হয়ে যাবে — একই টেস্ট নতুন করে আবার দেওয়া যাবে না।</li>
         <li>প্রতিটি প্রশ্নের নিচে মাঝখানে <b>ফেভারিট</b> বাটন আছে।</li>
         <li>সময় শেষ হয়ে গেলে পরীক্ষা <b>নিজে থেকেই জমা</b> হয়ে যাবে।</li>
-        <li>জমা দেওয়ার পর <b>স্কোরসহ পূর্ণ রিভিউ</b> ও প্রতিটি প্রশ্নের ব্যাখ্যা দেখতে পাবে।</li>
+        <li>জমা দেওয়ার পর শুধু <b>উত্তর জমা হয়েছে</b> — এই নিশ্চিতকরণই দেখতে পাবে; স্কোর, রিভিউ বা ব্যাখ্যা দেখানো হবে না। এই পরীক্ষার <b>ফলাফল পরে প্রকাশ করা হবে</b>।</li>
       </ul>
       <p id="detail-last" style="color:var(--accent);font-size:13.5px;font-weight:600;margin:12px 0 0;display:none"></p>
       <button class="btn-orange" id="btn-detail-start" style="margin-top:16px;font-size:16px;padding:15px">Start Now →</button>
@@ -347,6 +349,20 @@ h1.welcome{font-size:22px;line-height:1.35;margin:16px 0 2px}
       <button id="seg-wrong">শুধু ভুল/ছাড়া</button>
     </div>
     <div class="stack" id="review-list" style="margin-top:16px"></div>
+  </div>
+</section>
+
+<!-- SUBMITTED — blind exam confirmation: no score, no marks, no review; just proof
+     that the answers were submitted and the result was saved -->
+<section class="view" id="view-submitted">
+  <div class="wrap">
+    <div class="score-hero">
+      <div class="sent-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <p class="big" style="font-size:30px">উত্তর জমা হয়েছে</p>
+      <p class="k" id="sent-test-name"></p>
+      <p class="d" style="margin-top:8px">তোমার ফলাফল সংরক্ষণ করা হয়েছে। এই পরীক্ষার ফলাফল পরে প্রকাশ করা হবে।</p>
+    </div>
+    <button class="btn-primary" id="btn-sent-home" style="margin-top:16px">হোমে যাও</button>
   </div>
 </section>
 
@@ -1229,7 +1245,7 @@ var TESTS=[
 {id:"coaching-topics-100",post:"Exam -1",postEn:"টপিক ভিত্তিক মক টেস্ট — ১০০ MCQ",org:"Coaching Exam",date:"আপডেট: ২ নভেম্বর ২০২৬",minutes:90,marks:100,neg:0.5,isNew:true,coaching:true,subjects:"বাংলা প্রয়োগ-অপপ্রয়োগ ৩৫ • English Noun (সকল প্রকার) ৩৫ • জব সলুশন: ১০ম বিসিএস ১৫ • ১১তম বিসিএস ১৫ — মোট ১০০টি প্রশ্ন, Satt Academy প্রশ্নব্যাংক থেকে সংগৃহীত, তাদের ছাপানো উত্তরসহ।",questions:Q_COACHING}
 ];
 var LETTERS=["ক","খ","গ","ঘ","ঙ"], PER_PAGE=20;
-var state={name:"",phone:"",testId:null,answers:[],page:0,seconds:0,timerId:null,attempts:[],lastReview:null,lastTestId:null,favs:{},marked:{},reviewFilter:"all",submitted:false,detailId:null,detailFrom:"tests",seen:null,qbYear:null,qbSubject:"all",qbPicked:{},qbExpl:{}};
+var state={name:"",phone:"",testId:null,answers:[],page:0,seconds:0,timerId:null,attempts:[],lastReview:null,lastTestId:null,favs:{},marked:{},reviewFilter:"all",submitted:false,detailId:null,detailFrom:"tests",seen:null,qbYear:null,qbSubject:"all",qbPicked:{},qbExpl:{},lastBlind:false};
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
 function showView(id){var vs=document.querySelectorAll(".view");for(var i=0;i<vs.length;i++)vs[i].classList.remove("active");$(id).classList.add("active");window.scrollTo(0,0)}
@@ -1334,6 +1350,34 @@ function fkey(testId,no){return testId+":"+no}
 function favCount(){return Object.keys(state.favs).filter(function(k){return state.favs[k]}).length}
 function wrongItems(){if(!state.lastReview)return[];return state.lastReview.filter(function(r){return r.status!=="correct"&&r.status!=="cancelled"})}
 function negText(t){return t.neg===0?"নেই ✓":"প্রতি ভুলে −"+bnNum(t.neg)}
+/* BLIND EXAM MODE — every exam test in TESTS is blind: the whole Real Job Exam list,
+   the Coaching Exam tests and Sample Mock Test 01. After submitting, the test taker
+   sees only the "উত্তর জমা হয়েছে" confirmation — never the score, never correct/wrong
+   marks, no review, no explanations, and no Wrong Review entries for that test; the
+   test card, detail page, home latest box and My Results never display its score
+   either. The submit-lock still applies exactly as before. The Question Bank is NOT
+   a TESTS entry, so it stays in study mode, untouched. (A future test could opt out
+   with blind:false; none does.) */
+function isBlindTest(t){return !!t&&t.blind!==false}
+/* RESULT COLLECTION — on submit, the result is posted once to the owner's Google
+   Form, which collects every candidate's result in one place (name, test, score
+   and counts only — the mobile number is never sent). Fire-and-forget: no-cors,
+   never awaited, never blocks the confirmation screen, and any failure is
+   swallowed silently so the test taker never sees an error. */
+var RESULT_FORM_URL="https://docs.google.com/forms/d/e/1FAIpQLSfCDob5sD39T4sMtgXdegmd3zkyqWFVU56g-jRIKQlLEm23cQ/formResponse";
+function sendResultToForm(t,score,correct,wrong,skipped,total){
+  try{
+    var body=new URLSearchParams();
+    body.append("entry.198538670",state.name||"");
+    body.append("entry.299407817",t.post);
+    body.append("entry.855224033",score+"/"+total);
+    body.append("entry.232519188",String(correct));
+    body.append("entry.1827581229",String(wrong));
+    body.append("entry.2037261594",String(skipped));
+    body.append("entry.1924972192",String(total));
+    fetch(RESULT_FORM_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:body}).catch(function(){});
+  }catch(e){}
+}
 
 /* LOCK SYSTEM — a test submitted once stays locked for that user on this device/browser:
    the attempt (score + every marked answer) is kept per mobile number, the test can never be
@@ -1353,8 +1397,10 @@ function loadAttempts(){
   state.attempts=(k&&all[k]&&all[k].length)?all[k]:[];
   state.attempts.forEach(function(a){for(var i=0;i<TESTS.length;i++)if(TESTS[i].id===a.testId){a.title=TESTS[i].post;break}});
   var a=state.attempts[0];
-  if(a&&a.review){state.lastReview=a.review;state.lastTestId=a.testId}
-  else{state.lastReview=null;state.lastTestId=null}
+  /* a blind test's review is never restored, so Wrong Review stays empty for it
+     even across restarts (blind attempts are stored with review:null anyway) */
+  if(a&&a.review&&!isBlindTest(getTest(a.testId))){state.lastReview=a.review;state.lastTestId=a.testId;state.lastBlind=false}
+  else{state.lastReview=null;state.lastTestId=a?a.testId:null;state.lastBlind=!!(a&&isBlindTest(getTest(a.testId)))}
   loadFavs();
   loadSeen();
 }
@@ -1423,6 +1469,8 @@ function markSeen(section){
 function unseenItems(section,items){if(!state.seen)return 0;var s=state.seen[section]||[];return items.filter(function(x){return s.indexOf(x)<0}).length}
 function openAttemptReview(a){
   if(!a||!a.review)return;
+  /* blind exam tests never open a review — no marks, no explanations, ever */
+  if(isBlindTest(getTest(a.testId)))return;
   state.lastReview=a.review;state.lastTestId=a.testId;
   var t=getTest(a.testId);
   $("res-test-name").textContent=t.post+" — তোমার স্কোর";
@@ -1469,8 +1517,14 @@ function renderGrid(){
   });
   var latest=state.attempts[0];
   if(latest){
-    $("home-sub").textContent="সর্বশেষ স্কোর: "+latest.score+"/"+latest.total+" — আজ আরেকটা টেস্ট দিয়ে এগিয়ে যাও।";
-    $("latest-box").innerHTML='<button class="latest" id="latest-btn"><p class="k">সর্বশেষ ফলাফল</p><p class="t">'+esc(latest.title)+' — <span>'+latest.score+'/'+latest.total+'</span></p><p class="d">সঠিক '+latest.correct+' • ভুল '+latest.wrong+' • ছাড়া '+latest.skipped+(latest.cancelled?' • বাতিল '+latest.cancelled:"")+' • '+latest.when+'</p></button>';
+    if(isBlindTest(getTest(latest.testId))){
+      /* blind: the home screen must not leak the latest score or counts either */
+      $("home-sub").textContent="সর্বশেষ টেস্টের উত্তর জমা হয়েছে — আজ আরেকটা টেস্ট দিয়ে এগিয়ে যাও।";
+      $("latest-box").innerHTML='<button class="latest" id="latest-btn"><p class="k">সর্বশেষ টেস্ট</p><p class="t">'+esc(latest.title)+'</p><p class="d">উত্তর জমা হয়েছে • ফলাফল পরে প্রকাশ করা হবে • '+latest.when+'</p></button>';
+    } else {
+      $("home-sub").textContent="সর্বশেষ স্কোর: "+latest.score+"/"+latest.total+" — আজ আরেকটা টেস্ট দিয়ে এগিয়ে যাও।";
+      $("latest-box").innerHTML='<button class="latest" id="latest-btn"><p class="k">সর্বশেষ ফলাফল</p><p class="t">'+esc(latest.title)+' — <span>'+latest.score+'/'+latest.total+'</span></p><p class="d">সঠিক '+latest.correct+' • ভুল '+latest.wrong+' • ছাড়া '+latest.skipped+(latest.cancelled?' • বাতিল '+latest.cancelled:"")+' • '+latest.when+'</p></button>';
+    }
     $("latest-btn").onclick=function(){renderResults();show("view-results")};
   } else { $("latest-box").innerHTML=""; }
 }
@@ -1497,8 +1551,8 @@ function testCard(t,from){
       +(t.neg===0?'<span class="chip none">নেগেটিভ মার্কিং নেই</span>':'<span class="chip neg">ভুলে −'+bnNum(t.neg)+'</span>')
       +(done?'<span class="chip lock">দেওয়া হয়ে গেছে — লক</span>':"")
       +(draft?'<span class="chip draft">সংরক্ষিত — '+draftAnswered+'টি উত্তর দেওয়া</span>':"")+'</div>'
-      +(done?'<p style="color:var(--accent);font-size:14px;font-weight:600;margin:10px 0 0">তোমার স্কোর: '+done.score+'/'+done.total+'</p>':"")
-      +'<p class="go">'+(done?"তোমার উত্তর ও রিভিউ দেখো →":"বিস্তারিত দেখো →")+'</p>';
+      +(done&&!isBlindTest(t)?'<p style="color:var(--accent);font-size:14px;font-weight:600;margin:10px 0 0">তোমার স্কোর: '+done.score+'/'+done.total+'</p>':"")
+      +'<p class="go">'+(done?(isBlindTest(t)?"উত্তর জমা হয়েছে ✓":"তোমার উত্তর ও রিভিউ দেখো →"):"বিস্তারিত দেখো →")+'</p>';
     b.onclick=function(){openTestDetail(t.id,from)};
     return b;
 }
@@ -1770,9 +1824,17 @@ function openTestDetail(id,from){
   var last=$("detail-last");
   var startBtn=$("btn-detail-start");
   if(done){
-    last.style.display="";last.textContent="তুমি এই টেস্টটি একবার দিয়ে ফেলেছো — স্কোর: "+done.score+"/"+done.total+" ("+done.when+")। টেস্টটি লক করা আছে, তাই নতুন করে আবার দেওয়া যাবে না।";
-    startBtn.textContent="তোমার উত্তর ও রিভিউ দেখো →";
-    startBtn.onclick=function(){openAttemptReview(done)};
+    last.style.display="";
+    if(isBlindTest(t)){
+      /* blind: the lock message must not carry the score, and there is no review to open */
+      last.textContent="তুমি এই টেস্টটি একবার দিয়ে ফেলেছো — উত্তর জমা হয়েছে ("+done.when+")। ফলাফল পরে প্রকাশ করা হবে। টেস্টটি লক করা আছে, তাই নতুন করে আবার দেওয়া যাবে না।";
+      startBtn.textContent="উত্তর জমা হয়েছে ✓";
+      startBtn.onclick=function(){if(state.detailFrom==="coaching"){renderCoachingList();show("view-coaching")}else{renderTestsList();show("view-tests")}};
+    } else {
+      last.textContent="তুমি এই টেস্টটি একবার দিয়ে ফেলেছো — স্কোর: "+done.score+"/"+done.total+" ("+done.when+")। টেস্টটি লক করা আছে, তাই নতুন করে আবার দেওয়া যাবে না।";
+      startBtn.textContent="তোমার উত্তর ও রিভিউ দেখো →";
+      startBtn.onclick=function(){openAttemptReview(done)};
+    }
   } else {
     var draft=getDraft(t.id);
     if(draft){
@@ -1806,6 +1868,7 @@ function startTimer(){
 }
 function startTest(id){
   var doneA=getAttempt(id);
+  if(doneA&&isBlindTest(getTest(id))){openTestDetail(id,state.detailFrom);return}
   if(doneA&&doneA.review){openAttemptReview(doneA);return}
   var t=getTest(id);state.testId=id;
   var draft=getDraft(id);
@@ -1939,7 +2002,8 @@ $("btn-submit").onclick=function(){
   var TOTAL=totalQ(),t=curTest();
   var answered=state.answers.filter(function(a){return a!==null}).length;
   var negLine=t.neg===0?"এই টেস্টে কোনো নেগেটিভ মার্কিং নেই — ভুল উত্তরে কোনো নম্বর কাটা যাবে না।":"ভুল উত্তরে −"+bnNum(t.neg)+" নম্বর কাটা যাবে।";
-  $("modal-text").textContent="উত্তর দিয়েছো "+answered+"/"+TOTAL+"টি। ছাড়া গেছে "+(TOTAL-answered)+"টি। "+negLine+" জমা দিলে এই টেস্টটি লক হয়ে যাবে — একই টেস্ট নতুন করে আবার দেওয়া যাবে না, তবে তোমার উত্তরগুলো রিভিউতে মার্ক করা অবস্থায় থেকে যাবে।";
+  var lockLine=isBlindTest(t)?"জমা দিলে এই টেস্টটি লক হয়ে যাবে — একই টেস্ট নতুন করে আবার দেওয়া যাবে না। স্কোর এখন দেখা যাবে না; তোমার ফলাফল সংরক্ষণ করা হবে এবং পরে প্রকাশ করা হবে।":"জমা দিলে এই টেস্টটি লক হয়ে যাবে — একই টেস্ট নতুন করে আবার দেওয়া যাবে না, তবে তোমার উত্তরগুলো রিভিউতে মার্ক করা অবস্থায় থেকে যাবে।";
+  $("modal-text").textContent="উত্তর দিয়েছো "+answered+"/"+TOTAL+"টি। ছাড়া গেছে "+(TOTAL-answered)+"টি। "+negLine+" "+lockLine;
   $("submit-modal").classList.add("open");
 };
 $("btn-cancel-submit").onclick=function(){$("submit-modal").classList.remove("open")};
@@ -1947,13 +2011,15 @@ $("btn-confirm-submit").onclick=function(){$("submit-modal").classList.remove("o
 function submitTest(){
   if(state.submitted)return;state.submitted=true;
   if(state.timerId)clearInterval(state.timerId);
+  var blind=isBlindTest(curTest());
+  var destView=blind?"view-submitted":"view-result";
   /* the result screen replaces the test screen in the back stack: going back from a
      result lands on the test detail / list it came from, never on a dead test screen */
-  if(navStack[navStack.length-1]==="view-test"){navStack[navStack.length-1]="view-result";
+  if(navStack[navStack.length-1]==="view-test"){navStack[navStack.length-1]=destView;
     /* step back over the test's guard entry so the result screen sits on the test
        screen's own entry, with the detail entry directly below it */
     if(testGuard){testGuard=false;suppressNextPop();try{history.go(-1)}catch(e){}}
-    else{try{history.replaceState({v:"view-result"},"")}catch(e){}}}
+    else{try{history.replaceState({v:destView},"")}catch(e){}}}
   $("backexit-modal").classList.remove("open");$("submit-modal").classList.remove("open");$("save-modal").classList.remove("open");
   clearDraft(state.testId);
   var t=curTest(),qs=curQs(),TOTAL=qs.length;
@@ -1966,8 +2032,22 @@ function submitTest(){
     review.push({testId:t.id,no:i+1,text:q.text,options:q.options,correct:q.correct,chosen:ch,explanation:q.explanation,status:st});
   });
   var score=t.neg===0?correct:correct-wrong*t.neg;
+  if(blind){
+    /* BLIND SUBMIT — the result goes to the owner's Google Form (exactly once, here
+       in submitTest and nowhere else — never on save), the attempt is stored WITHOUT
+       its per-question review so nothing on this device can reveal marks or
+       explanations for this test, Wrong Review is left empty for it, and the test
+       taker lands on the plain confirmation screen. The lock still applies via the
+       stored attempt, exactly as for any other test. */
+    sendResultToForm(t,score,correct,wrong,skipped,TOTAL);
+    var blindAttempt={testId:t.id,title:t.post,score:score,correct:correct,wrong:wrong,skipped:skipped,cancelled:cancelled,total:TOTAL,when:new Date().toLocaleString("bn-BD"),review:null};
+    state.attempts.unshift(blindAttempt);state.lastReview=null;state.lastTestId=t.id;state.lastBlind=true;saveAttempts();
+    $("sent-test-name").textContent=t.post;
+    show("view-submitted");
+    return;
+  }
   var attempt={testId:t.id,title:t.post,score:score,correct:correct,wrong:wrong,skipped:skipped,cancelled:cancelled,total:TOTAL,when:new Date().toLocaleString("bn-BD"),review:review};
-  state.attempts.unshift(attempt);state.lastReview=review;state.lastTestId=t.id;saveAttempts();
+  state.attempts.unshift(attempt);state.lastReview=review;state.lastTestId=t.id;state.lastBlind=false;saveAttempts();
   $("res-test-name").textContent=t.post+" — তোমার স্কোর";
   $("res-score").textContent=score;
   $("res-total").textContent=" / "+TOTAL;
@@ -1975,6 +2055,7 @@ function submitTest(){
   state.reviewFilter="all";$("seg-all").className="on";$("seg-wrong").className="";
   renderReview();show("view-result");
 }
+$("btn-sent-home").onclick=function(){renderGrid();show("view-home")};
 function reviewCard(r,hideBadge){
   var badge=r.status==="correct"?"✓ সঠিক":r.status==="wrong"?"✗ ভুল":r.status==="cancelled"?"— বাতিল":"— ছাড়া";
   var fk=fkey(r.testId,r.no);
@@ -1998,13 +2079,18 @@ function renderResults(){
   var el=$("results-list");
   if(!state.attempts.length){el.innerHTML='<p class="empty">এখনো কোনো টেস্ট দাওনি। প্রথম টেস্টটা দিয়ে ফেলো!</p>';return}
   el.innerHTML=state.attempts.map(function(a,i){
+    if(isBlindTest(getTest(a.testId))){
+      /* blind: the entry proves the test was taken and locked, but shows no score,
+         no correct/wrong counts and no review button */
+      return '<div class="card"><div class="result-row"><p style="font-weight:700;margin:0;font-size:16px">'+esc(a.title)+'</p><span class="chip lock">জমা হয়েছে</span></div><p style="color:var(--dim);font-size:15px;margin:6px 0 0">ফলাফল পরে প্রকাশ করা হবে।</p><p style="color:var(--dim);font-size:13px;margin:2px 0 0">'+a.when+'</p></div>';
+    }
     return '<div class="card"><div class="result-row"><p style="font-weight:700;margin:0;font-size:16px">'+esc(a.title)+'</p><p class="sc" style="margin:0">'+a.score+'/'+a.total+'</p></div><p style="color:var(--dim);font-size:15px;margin:6px 0 0">সঠিক '+a.correct+' • ভুল '+a.wrong+' • ছাড়া '+a.skipped+(a.cancelled?' • বাতিল '+a.cancelled:"")+'</p><p style="color:var(--dim);font-size:13px;margin:2px 0 0">'+a.when+'</p>'+(a.review?'<button class="btn-ghost" style="margin-top:12px" onclick="openResultReview('+i+')">তোমার উত্তর ও রিভিউ দেখো →</button>':"")+'</div>';
   }).join("");
 }
 function renderWrong(){
   markSeen("wrong");
   var el=$("wrong-list"),items=wrongItems();
-  if(!state.lastReview){el.innerHTML='<p class="empty">আগে একটা টেস্ট দাও — তারপর ভুল আর ছাড়া প্রশ্নগুলো এখানে জমা হবে রিভিশনের জন্য।</p>';return}
+  if(!state.lastReview){el.innerHTML=state.lastBlind?'<p class="empty">সর্বশেষ টেস্টের উত্তর জমা হয়েছে — ফলাফল পরে প্রকাশ করা হবে, তাই এই টেস্টের ভুল বা ছাড়া প্রশ্ন এখানে দেখানো হচ্ছে না।</p>':'<p class="empty">আগে একটা টেস্ট দাও — তারপর ভুল আর ছাড়া প্রশ্নগুলো এখানে জমা হবে রিভিশনের জন্য।</p>';return}
   if(!items.length){el.innerHTML='<p class="empty">সর্বশেষ টেস্টে কোনো ভুল নেই — দারুণ!</p>';return}
   var t=getTest(state.lastTestId);
   el.innerHTML='<p class="sub" style="margin:0">সর্বশেষ টেস্ট: '+esc(t.post)+'</p>'+items.map(function(r){return reviewCard(r,false)}).join("");
@@ -2023,6 +2109,13 @@ function renderFlagged(kind){
     var qbm=/^qb-(\d+)$/.exec(tid),title,q;
     if(qbm){var qbd=QB_BCS_DATA[qbm[1]];if(!qbd||!qbd.questions[no-1])return "";title=bnOrd(parseInt(qbm[1],10))+qbSuffix(qbd)+" — Question Bank";q=qbd.questions[no-1]}
     else{var t=getTest(tid);title=t.post;q=t.questions[no-1];if(!q)return ""}
+    if(!qbm&&isBlindTest(t)){
+      /* blind exam: a favourited question stays listed by text only — no correct
+         mark and no explanation here either, or Favourites would leak the answer */
+      var fk2=fkey(tid,no);
+      var plainOpts=q.options.map(function(o,oi){return '<p class="ropt">'+LETTERS[oi]+'. '+esc(o)+'</p>'}).join("");
+      return '<p class="sub" style="margin:0 0 -4px;font-weight:600">'+esc(title)+'</p><div class="rcard"><p class="qtext"><span class="qn">'+no+'.</span>'+esc(q.text)+'</p><div style="margin-top:6px">'+plainOpts+'</div><p style="color:var(--dim);font-size:14.5px;line-height:1.65;margin:10px 0 0">এই পরীক্ষার ফলাফল পরে প্রকাশ করা হবে — সঠিক উত্তর বা ব্যাখ্যা এখানে দেখানো হচ্ছে না।</p><div style="margin-top:12px"><button class="pillbtn'+(state.favs[fk2]?" fav-on":"")+'" onclick="toggleFavReview(\''+tid+'\','+no+')">'+(state.favs[fk2]?"♥ ফেভারিট":"♡ ফেভারিট")+'</button></div></div>';
+    }
     return '<p class="sub" style="margin:0 0 -4px;font-weight:600">'+esc(title)+'</p>'+reviewCard({testId:tid,no:no,text:q.text,options:q.options,correct:q.correct,chosen:null,explanation:q.explanation,status:"skipped"},true);
   }).join("");
 }
