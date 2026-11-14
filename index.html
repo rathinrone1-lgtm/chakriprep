@@ -1417,36 +1417,27 @@ function isBlindTest(t){return !!t&&t.blind!==false}
    and counts only — the mobile number is never sent). Fire-and-forget: never
    awaited, never blocks the confirmation screen, and any failure is swallowed
    silently so the test taker never sees an error.
-   WHY SEVERAL CHANNELS: Google Forms parses the answers out of the POST body
-   ONLY when the request arrives as a genuine
-   application/x-www-form-urlencoded submission. Three carriers can produce
-   exactly that, and delivery is attempted through them in turn until one is
-   confirmed, so no single blocked carrier can lose a result:
-   1) a native <form> POST into a hidden iframe — the browser builds the
-      urlencoded body itself, exactly as if a person had filled in the Google
-      Form. Delivery is CONFIRMED when Google's response page loads in the
-      iframe.
-   2) navigator.sendBeacon with a urlencoded Blob — neither a fetch nor a
-      form submission: the browser queues it natively, with the Blob's
-      Content-Type intact, and it survives the page going away.
-   3) a plain urlencoded fetch — last resort only.
-   Channel 1 alone was the original design, and it failed silently from the
-   shared (iframe-embedded) build: where the host frame's sandbox omits
-   allow-forms, form.submit() is blocked without raising any error, and the
-   freshly created iframe's own initial about:blank load could mark the post
-   "loaded" before it ever navigated — suppressing the only fallback, so
-   NOTHING was sent at all, while the taker still saw the confirmation
-   screen. The sink is therefore pre-built and its iframe pre-loaded long
-   before any submit (armResultSink, called at startup and at login): once
-   the sink is "warm", a load seen during a submit can only be Google's
-   response page arriving. If no confirmation load arrives, the beacon
-   carries the result; and if the app is closed while a result is still
-   unconfirmed, a pagehide rescue fires the beacon immediately, because a
-   taker often leaves right after seeing the confirmation. */
+   EXACTLY ONE SEND PER SUBMISSION: Google Forms parses the answers out of
+   the POST body only when the request arrives as a genuine
+   application/x-www-form-urlencoded submission, and a native <form> POST
+   into a hidden iframe is the carrier that produces exactly that — the
+   browser builds the urlencoded body itself, exactly as if a person had
+   filled in the Google Form. It is the ONLY carrier used. An earlier
+   version added a sendBeacon fallback (fired when the iframe's response
+   load was not seen within a few seconds) plus a pagehide rescue beacon,
+   but the cross-origin iframe load event is not a reliable delivery
+   receipt in embedded webviews: the form post landed in the Sheet AND a
+   fallback beacon landed too, so every result arrived twice, about a
+   second apart. There is therefore deliberately no second carrier, no
+   retry and no rescue send — one submit, one form post, one row. A
+   per-user, per-test latch in sendResultToForm additionally makes a
+   second dispatch impossible even if the submit path were re-entered.
+   The sink is pre-built long before any submit (armResultSink, called at
+   startup and at login) so the form and iframe already exist in the DOM
+   when the moment comes. */
 var RESULT_FORM_URL="https://docs.google.com/forms/d/e/1FAIpQLSfCDob5sD39T4sMtgXdegmd3zkyqWFVU56g-jRIKQlLEm23cQ/formResponse";
 var RESULT_ENTRY_IDS=["entry.198538670","entry.299407817","entry.855224033","entry.232519188","entry.1827581229","entry.2037261594","entry.1924972192"];
 var resultSink=null;
-var pendingResult=null; /* {values, confirmed} while a delivery is in flight */
 function ensureResultSink(){
   if(resultSink)return resultSink;
   var iframe=document.createElement("iframe");
@@ -1467,32 +1458,19 @@ function ensureResultSink(){
     form.appendChild(inp);inputs[n]=inp;
   });
   document.body.appendChild(form);
-  resultSink={form:form,iframe:iframe,inputs:inputs,warmed:false};
-  /* the new iframe starts on about:blank and fires one load for it; only once
-     that load has been seen is the sink "warm", so a load observed during a
-     submit can only mean Google's response page really arrived */
-  iframe.addEventListener("load",function(){resultSink.warmed=true});
+  resultSink={form:form,iframe:iframe,inputs:inputs};
   return resultSink;
 }
 function armResultSink(){try{ensureResultSink()}catch(e){}}
-function resultBodyString(values){
-  var parts=[];
-  RESULT_ENTRY_IDS.forEach(function(n){parts.push(encodeURIComponent(n)+"="+encodeURIComponent(values[n]||""))});
-  return parts.join("&");
-}
-function beaconResult(values){
-  try{
-    if(!navigator.sendBeacon)return false;
-    var blob=new Blob([resultBodyString(values)],{type:"application/x-www-form-urlencoded"});
-    return navigator.sendBeacon(RESULT_FORM_URL,blob)===true;
-  }catch(e){return false}
-}
-function fetchResultFallback(values){
-  try{
-    fetch(RESULT_FORM_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:resultBodyString(values)}).catch(function(){});
-  }catch(e){}
-}
+/* EXACTLY-ONCE LATCH — keyed by user + test: the first dispatch latches the
+   key, and any later call for the same user and test returns without sending.
+   Combined with the single form-post carrier (no beacon, no fetch, no retry,
+   no pagehide rescue), one submission produces exactly one Sheet row. */
+var resultSentKeys={};
 function sendResultToForm(t,score,correct,wrong,skipped,total){
+  var key=userKey()+"|"+(state.name||"")+"|"+t.id;
+  if(resultSentKeys[key])return;
+  resultSentKeys[key]=true;
   var values={};
   values["entry.198538670"]=state.name||"";
   values["entry.299407817"]=t.post||"";
@@ -1501,52 +1479,12 @@ function sendResultToForm(t,score,correct,wrong,skipped,total){
   values["entry.1827581229"]=String(wrong);
   values["entry.2037261594"]=String(skipped);
   values["entry.1924972192"]=String(total);
-  var job={values:values,confirmed:false};
-  pendingResult=job;
-  function fallback(){
-    if(pendingResult===job)pendingResult=null;
-    if(!beaconResult(values))fetchResultFallback(values);
-  }
-  var started=false;
-  function doSubmit(){
-    if(started)return;started=true;
-    try{
-      var sink=ensureResultSink();
-      RESULT_ENTRY_IDS.forEach(function(n){sink.inputs[n].value=values[n]});
-      var onLoad=function(){job.confirmed=true;if(pendingResult===job)pendingResult=null;sink.iframe.removeEventListener("load",onLoad)};
-      sink.iframe.addEventListener("load",onLoad);
-      sink.form.submit();
-      /* if Google's response page never loads in the iframe (a sandboxed host
-         frame blocking the form post, a dropped navigation), deliver by
-         beacon instead — never in the confirmed case, so no duplicate rows */
-      setTimeout(function(){
-        sink.iframe.removeEventListener("load",onLoad);
-        if(!job.confirmed)fallback();
-      },5000);
-    }catch(e){fallback()}
-  }
   try{
     var sink=ensureResultSink();
-    if(sink.warmed){doSubmit()}
-    else{
-      /* sink not warm yet: its pending about:blank load must be waited out
-         first, otherwise that load would be mistaken for Google's response
-         and would confirm a delivery that never happened */
-      var warmWait=function(){sink.iframe.removeEventListener("load",warmWait);doSubmit()};
-      sink.iframe.addEventListener("load",warmWait);
-      setTimeout(function(){sink.iframe.removeEventListener("load",warmWait);doSubmit()},800);
-    }
-  }catch(e){fallback()}
+    RESULT_ENTRY_IDS.forEach(function(n){sink.inputs[n].value=values[n]});
+    sink.form.submit();
+  }catch(e){}
 }
-/* PAGEHIDE RESCUE — if the app is closed or navigated away while a result is
-   still unconfirmed, send it by beacon immediately: sendBeacon is queued by
-   the browser precisely so it survives the page going away. */
-window.addEventListener("pagehide",function(){
-  if(pendingResult&&!pendingResult.confirmed){
-    var job=pendingResult;pendingResult=null;
-    if(!beaconResult(job.values))fetchResultFallback(job.values);
-  }
-});
 
 /* LOCK SYSTEM — a test submitted once stays locked for that user on this device/browser:
    the attempt (score + every marked answer) is kept per mobile number, the test can never be
